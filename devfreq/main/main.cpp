@@ -183,9 +183,12 @@ static int task_command(const char *exec, bool syscmd)
 	FILE *fp;
 	char buf[16];
 	size_t len;
+	int ret;
 
-	if (syscmd)
-		return system(exec);
+	if (syscmd) {
+		ret = system(exec);
+		return (int)((char)WEXITSTATUS(ret));
+	}
 
 	fp = popen(exec, "r");
 	if (!fp)
