@@ -2,7 +2,11 @@ include env.mk
 
 ################################################################################
 SRC_DIRS := main
+SRC_DIRS += nx_vpu
 LIB_DIRS := json
+LIB_DIRS += libdrm
+LIB_DIRS += libnx_video_alloc
+LIB_DIRS += libnx_video_api
 ################################################################################
 
 all: lib src
@@ -12,37 +16,38 @@ lib:
 	@for dir in $(LIB_DIRS); do \
 		echo "========================================================\n" && \
 		make DESTDIR=$(DESTDIR) DEBUG=$(DEBUG) \
-                CROSS_COMPILE=$(CROSS_COMPILE) \
+		CROSS_COMPILE=$(CROSS_COMPILE) \
 		EXT_CFLAGS="$(EXT_CFLAGS)" EXT_CPPFLAGS="$(EXT_CPPFLAGS)" \
 		EXT_LDFLAGS="$(EXT_LDFLAGS)" \
 		-C $$dir || exit $?; \
-        done
+	done
 
 src:
 	@for dir in $(SRC_DIRS); do \
 		echo "========================================================\n" && \
-                make DESTDIR=$(DESTDIR) DEBUG=$(DEBUG) \
-                CROSS_COMPILE=$(CROSS_COMPILE) \
+		make DESTDIR=$(DESTDIR) DEBUG=$(DEBUG) \
+		CROSS_COMPILE=$(CROSS_COMPILE) \
 		EXT_CFLAGS="$(EXT_CFLAGS)" EXT_CPPFLAGS="$(EXT_CPPFLAGS)" \
 		EXT_LDFLAGS="$(EXT_LDFLAGS)" \
 		-C $$dir || exit $?; \
-        done
+	done
+	mkdir -p $(DESTDIR)/data && cp -av nxp3220_devfreq.js $(DESTDIR)/data/
 
 clean:
 	@for dir in $(SRC_DIRS); do \
-                make -C $$dir clean || exit $?; \
-        done
+		make -C $$dir clean || exit $?; \
+	done
 	@for dir in $(LIB_DIRS); do \
-                make -C $$dir clean || exit $?; \
-        done
+		make -C $$dir clean || exit $?; \
+	done
 
 distclean:
 	@for dir in $(SRC_DIRS); do \
-                make -C $$dir distclean || exit $?; \
-        done
+		make -C $$dir distclean || exit $?; \
+	done
 	@for dir in $(LIB_DIRS); do \
-                make -C $$dir distclean || exit $?; \
-        done
+		make -C $$dir distclean || exit $?; \
+	done
 	rm -rf $(DESTDIR)
 
 help:
