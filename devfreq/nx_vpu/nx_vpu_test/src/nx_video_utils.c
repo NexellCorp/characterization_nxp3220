@@ -389,17 +389,15 @@ int32_t nx_memory_compare( NX_VID_MEMORY_INFO* src_memory, NX_VID_MEMORY_INFO* d
 
 		for( h = 0; h < height; h++ )
 		{
-			for( w = 0; w < width; w++ )
+			if( 0 != memcmp( src_ptr, dst_ptr, width ) )
 			{
-				if( src_ptr[h*stride+w] != dst_ptr[h*stride+w] )
-				{
-					printf("plane( %d ), coordinate( %d, %d ), src( 0x%02X ), dst( 0x%02X )\n",
-						i, w, h, src_ptr[h*stride+w], dst_ptr[h*stride+w] );
-
-					ret = -1;
-					return ret;
-				}
+				printf("fail, memcmp(). ( plane: %d, line: %d, src: %p, dst: %p )\n", i, h, src_ptr, dst_ptr );
+				ret = -1;
+				return ret;
 			}
+
+			src_ptr += stride;
+			dst_ptr += stride;
 		}
 	}
 
