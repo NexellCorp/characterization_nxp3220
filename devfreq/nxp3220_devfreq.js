@@ -8,7 +8,7 @@
 		"thread"   : true,
 		"path"	   : "/usr/bin",
 		"command"  : "nx_vpu_test",
-		"args"     : "-s 1920,1088 -i /usr/data/bitstream -g /usr/data/golden -k 4 -l 200",
+		"args"     : "-s 1920,1088 -i /usr/data/bitstream -g /usr/data/golden -k 4 -t 10000 -p 2500",
 		"return"   : [0, 0],
 		"loop"     : 0,
 		"delay"    : 0,
