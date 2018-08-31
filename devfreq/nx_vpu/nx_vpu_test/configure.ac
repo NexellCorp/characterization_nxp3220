@@ -27,11 +27,12 @@ AC_CHECK_HEADERS([stdint.h stdlib.h string.h unistd.h])
 AC_CHECK_HEADER_STDBOOL
 AC_TYPE_INT32_T
 AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset mkdir strdup])
+AC_CHECK_FUNCS([gettimeofday memset mkdir strdup])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])

@@ -36,6 +36,8 @@
 
 //------------------------------------------------------------------------------
 #define NX_IMAGE_FORMAT		V4L2_PIX_FMT_YUV420
+#define NX_TIME_EXPECTED	10000
+#define NX_TIME_COMPARE		2000
 
 enum {
 	NX_RET_SUCCESS					=  0,
@@ -58,7 +60,9 @@ typedef struct NX_APP_INFO {
 	NX_LIST_HANDLE	input_list;
 	NX_LIST_HANDLE	golden_list;
 
-	int32_t		end_frame;
+	uint64_t	start_time;
+	uint64_t	expected_time;
+	uint64_t	compare_time;
 } NX_APP_INFO;
 
 //------------------------------------------------------------------------------
@@ -220,6 +224,15 @@ static int32_t get_codec_type( int32_t codec )
 }
 
 //------------------------------------------------------------------------------
+static uint64_t get_time( void )
+{
+	struct timeval	tv;
+	struct timezone	tz;
+	gettimeofday( &tv, &tz );
+	return ((uint64_t)tv.tv_sec)*1000 + tv.tv_usec/1000;
+}
+
+//------------------------------------------------------------------------------
 static int32_t vpu_dec_test( NX_APP_INFO* info )
 {
 	uint8_t strm_buf[4*1024*1024];
@@ -230,6 +243,7 @@ static int32_t vpu_dec_test( NX_APP_INFO* info )
 	int32_t size, additional;
 	int32_t frm_cnt = 0, strm_cnt = 0, img_cnt = 0;
 	int32_t prv_index = -1;
+	uint64_t elapsed_time = 0;
 
 	char* file, file_output[1024];
 	NX_VID_MEMORY_INFO* mem_golden = NULL;
@@ -350,7 +364,8 @@ static int32_t vpu_dec_test( NX_APP_INFO* info )
 
 			if( 0 <= dec_out.dispIdx )
 			{
-				if( (info->end_frame && (frm_cnt >= info->end_frame) && (img_cnt != 0 )) )
+				if( ((info->expected_time - info->compare_time) <= (get_time() - info->start_time)) &&
+					(img_cnt != 0 ) )
 				{
 					ret = nx_list_search( info->golden_list, (void*)&file, img_cnt );
 					if( 0 > ret )
@@ -360,6 +375,8 @@ static int32_t vpu_dec_test( NX_APP_INFO* info )
 						goto TERMINATE;
 					}
 
+					elapsed_time = get_time();
+					printf("Memory Load. ( golden data: %s )\n", file);
 					ret = nx_memory_load( mem_golden, file );
 					if( 0 > ret )
 					{
@@ -367,8 +384,10 @@ static int32_t vpu_dec_test( NX_APP_INFO* info )
 						ret = NX_RET_FAIL_GOLDEN_LOAD;
 						goto TERMINATE;
 					}
+					printf("Memory Load Done. ( elapsed time: %lld mSec )\n", get_time() - elapsed_time);
 
-					printf("Compare Data. ( golden data: %s )\n", file);
+					elapsed_time = get_time();
+					printf("Data Comapre. ( golden data: %s )\n", file);
 					ret = nx_memory_compare( &dec_out.hImg, mem_golden );
 					if( 0 > ret )
 					{
@@ -377,6 +396,7 @@ static int32_t vpu_dec_test( NX_APP_INFO* info )
 						goto TERMINATE;
 					}
 
+					printf("Data Compare Done. ( elapsed time: %lld mSec )\n", get_time() - elapsed_time);
 					ret = NX_RET_SUCCESS;
 					goto TERMINATE;
 				}
@@ -431,8 +451,9 @@ static void print_usage(const char *name)
 		"   -k [key interval]     [M] : key frame interval\n"
 		"   -i [input path]       [M] : input file path\n"
 		"   -g [golden path]      [M] : golden file path\n"
-		"   -l [decode frame num] [O] : decode frame number\n"
 		"   -c [codec]            [O] : 0:H264, 1:H263, 2:MPEG4, 3:MPEG2 (def: H264)\n"
+		"   -t [expected time]    [O] : expected working time (def: 10000 mSec)\n"
+		"   -p [compare time]     [o] : prediction compare time (def: 2000 mSec)\n"
 		"   -h : help\n"
 		,name
 	);
@@ -452,7 +473,9 @@ int32_t main( int32_t argc, char *argv[] )
 
 	register_signal();
 
-	while (-1 != (opt = getopt(argc, argv, "s:k:i:g:l:h")))
+	info.start_time = get_time();
+
+	while (-1 != (opt = getopt(argc, argv, "s:k:i:g:t:p:h")))
 	{
 		switch(opt)
 		{
@@ -461,7 +484,8 @@ int32_t main( int32_t argc, char *argv[] )
 		case 'c':	info.codec = atoi(optarg);			break;
 		case 'i':	input_path = strdup(optarg);		break;
 		case 'g':	golden_path = strdup(optarg);		break;
-		case 'l':	info.end_frame = atoi(optarg);		break;
+		case 't':	info.expected_time = (uint64_t)atoi(optarg);	break;
+		case 'p':	info.compare_time = (uint64_t)atoi(optarg);		break;
 		case 'h':	print_usage(argv[0]);				return 0;
 		default:	break;
 		}
@@ -475,8 +499,11 @@ int32_t main( int32_t argc, char *argv[] )
 		goto TERMINATE;
 	}
 
-	if( info.end_frame == 0 )
-		info.end_frame = info.key_interval;
+	if( info.expected_time == 0 )
+		info.expected_time = NX_TIME_EXPECTED;
+
+	if( info.compare_time == 0 )
+		info.compare_time = NX_TIME_COMPARE;
 
 	info.codec = get_codec_type(info.codec);
 
