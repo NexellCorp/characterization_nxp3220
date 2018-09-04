@@ -102,6 +102,15 @@ dvfsutil.o: dvfsutil.c \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/sys/poll.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/bits/poll.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/sys/time.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/linux/sched.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/errno.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/bits/errno.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/linux/errno.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/asm/errno.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/asm-generic/errno.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/asm-generic/errno-base.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/sys/resource.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/bits/resource.h \
  asv_type.h dvfsutil.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/4.9.3/include/stdbool.h
 asv_test.o: asv_test.c \
@@ -166,6 +175,8 @@ asv_test.o: asv_test.c \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/termios.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/bits/termios.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/sys/ttydefaults.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/error.h \
+ /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/bits/error.h \
  asv_type.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/4.9.3/include/stdint.h \
  /home/bok/devel/nexell/characterization/nxp3220/tools/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/libc/usr/include/stdint.h \

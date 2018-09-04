@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <error.h>
 #include "asv_type.h"
 #include "asv_command.h"
 
@@ -116,9 +117,10 @@ void RUN_TEST( int fd, ASV_MODULE_ID module )
 
 		if( cur - start > 9000000 )
 		{
+		//printf("\e[32m %ld \e[0m\n", (cur - start));
 			break;
 		}
-
+		//printf("\e[31m %ld \e[0m\n", (cur - start));
 	}
 	res = test->stop();
 	if( res == ASV_RES_OK )
@@ -143,6 +145,7 @@ void RUN_TEST( int fd, ASV_MODULE_ID module )
 }
 #endif
 
+extern int task_command(const char *exec, bool syscmd);
 
 int asv_test_main(void)
 {
@@ -152,7 +155,8 @@ int asv_test_main(void)
 
 	char cmd[MAX_STRING_SIZE];
 	int fd;
-	
+	int nr;
+
 	fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY);
 
 	struct termios	newtio, oldtio;
@@ -171,7 +175,14 @@ int asv_test_main(void)
 
 	tcflush( fd, TCIFLUSH );
 	tcsetattr( fd, TCSANOW, &newtio );
-	write_msg( fd, "\nBOOT DONE.\n");
+
+//	nr = system("nproc");
+	nr = task_command("/usr/bin/cpu_num.sh", 0);
+	printf("NR %d\n", nr);
+	if(nr == 2)
+		write_msg( fd, "\nBOOT DONE.\n");
+	else 
+		write_msg( fd, "\nBOOT FAIL.\n");
 
 #if 0
 	uint32_t ids[2];
@@ -200,6 +211,7 @@ int asv_test_main(void)
 #if 1
 		if( ASV_RES_OK == ParseStringToCommand( cmd, sizeof(cmd), &asvCmd, &asvModuleID, &asvParam ) )
 		{
+			printf("asvCmd : %d \n", asvCmd);
 			switch( asvCmd )
 			{
 			case ASVC_SET_FREQ:
@@ -210,6 +222,7 @@ int asv_test_main(void)
 					if( 0 != SetCPUFrequency(asvParam.u32) )
 					{
 						write_msg(fd, "FAIL : ASVC_SET_FREQ ASVM_CPU %dHz\n", asvParam.u32);
+						//printf("\e[31m FAIL : ASVC_SET_FREQ ASVM_CPU %dHz \e[0m\n", asvParam.u32);
 					}
 					else
 					{
@@ -297,12 +310,12 @@ int asv_test_main(void)
 				break;
 			}
 
-			case ASVC_GET_RO:
+			case ASVC_GET_HPM:
 			{
-				uint32_t ro[8];
-				GetRO( ro );
-				write_msg( fd, "SUCCESS : RO=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
-					ro[0], ro[1], ro[2], ro[3], ro[4], ro[5], ro[6], ro[7]);
+				uint32_t hpm[8];
+				GetHPM( hpm );
+				write_msg( fd, "SUCCESS : HPM=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
+					hpm[0], hpm[1], hpm[2], hpm[3], hpm[4], hpm[5], hpm[6], hpm[7]);
 				break;
 			}
 
@@ -350,7 +363,8 @@ int asv_test_main(void)
 extern int set_cmu(void);
 int main ( int argc, char *argv[] )
 {
-//	RUN_TEST( 0, ASVM_CPU );
+//	if (!SetCPUFrequency(500000000))
+//		RUN_TEST( 0, ASVM_CPU );
 //	return 0;
 	set_cmu();
 	asv_test_main();
