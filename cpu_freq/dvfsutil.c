@@ -27,6 +27,10 @@
 #include <pthread.h>
 #include <sys/poll.h>
 #include <sys/time.h>		//gettimeofday
+#include <linux/sched.h> 	/* SCHED_NORMAL, SCHED_FIFO, SCHED_RR, SCHED_BATCH */
+#include <errno.h> 		/* error */
+#include <sys/resource.h>
+#include <sched.h> 			/* schedule */
 
 #include "asv_type.h"
 #include "dvfsutil.h"
@@ -48,6 +52,84 @@
 
 // /sys/devices/platform/pll/pll.2
 #define	VPU_3D_FREQ_FILE		"/sys/devices/platform/pll/pll.2"
+
+int task_command(const char *exec, bool syscmd)
+{
+	FILE *fp;
+	char buf[16];
+	size_t len;
+	int ret;
+
+	if (syscmd) {
+		ret = system(exec);
+		return (int)((char)WEXITSTATUS(ret));
+	}
+
+	fp = popen(exec, "r");
+	if (!fp) {
+		printf("ERRor\n");
+		return errno;
+	}
+
+	len = fread((void*)buf, sizeof(char), sizeof(buf), fp);
+	if (!len) {
+		pclose(fp);
+		printf("ERRor\n");
+	        return errno;
+	}
+	pclose(fp);
+
+	return strtol(buf, NULL, 10);
+}
+
+int set_new_scheduler(pid_t pid, int policy, int priority)
+{
+	struct sched_param param;
+	int maxpri = 0, minpri = 0;
+	int ret;
+
+	switch(policy) {
+		case SCHED_NORMAL:
+		case SCHED_FIFO:
+		case SCHED_RR:
+		case SCHED_BATCH:	break;
+		default:
+			printf("invalid policy %d (0~3)\n", policy);
+			return -1;
+	}
+
+	if(SCHED_NORMAL == policy) {
+		maxpri =  20;	// #define NICE_TO_PRIO(nice)	(MAX_RT_PRIO + (nice) + 20), MAX_RT_PRIO 100
+		minpri = -20;	// nice
+	} else {
+		maxpri = sched_get_priority_max(policy);
+		minpri = sched_get_priority_min(policy);
+	}
+
+	if((priority > maxpri) || (minpri > priority)) {
+		printf("\nFail, invalid priority (%d ~ %d)...\n", minpri, maxpri);
+		return -1;
+	}
+
+	if(SCHED_NORMAL == policy) {
+		param.sched_priority = 0;
+		ret = sched_setscheduler(pid, policy, &param);
+		if(ret) {
+			printf("Fail, sched_setscheduler(ret %d), %s\n\n", ret, strerror(errno));
+			return ret;
+		}
+		ret = setpriority(PRIO_PROCESS, pid, priority);
+		if(ret)
+			printf("Fail, setpriority(ret %d), %s\n\n", ret, strerror(errno));
+	} else {
+		param.sched_priority = priority;
+		ret = sched_setscheduler(pid, policy, &param);
+		if(ret)
+			printf("Fail, sched_setscheduler(ret %d), %s\n\n", ret, strerror(errno));
+	}
+	return ret;
+}
+
 
 #if 1
 static int32_t _WriteSysInterface( const char *file, const char *buffer, int32_t bufSize )
@@ -104,6 +186,8 @@ int32_t SetCPUFrequency( uint32_t freq )
 	int32_t i, len;
 	char fileName[MAX_FILE_PATH];
 	char dataStr[MAX_FILE_DATA];
+	int r_hz, max_hz, min_hz;
+
 	 i = 0;
 //	for( i=0 ; i<MAX_NUM_CPU_CORE ; i++ )
 	{
@@ -122,6 +206,19 @@ int32_t SetCPUFrequency( uint32_t freq )
 			return -1;
 		}
 	}
+
+	r_hz = task_command("mhz | awk {'print $1}'", 0);
+	r_hz *= 1000;
+	max_hz =  min_hz = freq / 1000;
+	max_hz = max_hz + (max_hz *0.1);
+	min_hz = min_hz - (min_hz *0.1);
+	printf("Real set Freq : %dNhz\n", r_hz/1000);
+	if((r_hz > max_hz) || (r_hz < min_hz)) {
+		return -1;
+
+	}
+	
+
 	return 0;
 }
 #else
@@ -225,7 +322,7 @@ int32_t GetIDS( uint32_t ids[2] )
 	return 0;
 }
 #define	RO_FILE_NAME	"/sys/devices/platform/cpu/ro"
-int32_t GetRO( uint32_t ro[8] )
+int32_t GetHPM( uint32_t hpm[8] )
 {
 	char buffer[128] = {0, };
 	int32_t fd;
@@ -248,10 +345,8 @@ int32_t GetRO( uint32_t ro[8] )
 	close(fd);
 
 	printf(" %s \n", buffer);
-	sscanf(buffer, "%x:%x:%x:%x:%x:%x:%x:%x\n", &ro[0], &ro[1], &ro[2], &ro[3],
-			&ro[4], &ro[5], &ro[6], &ro[7]	);
-	printf(" RO :%x:%x:%x:%x", ro[0], ro[1], ro[2], ro[3]);
-	printf(":%x:%x:%x:%x\n", ro[4], ro[5], ro[6], ro[7]);
+	sscanf(buffer, "%x:%x:%x:%x:%x:%x:%x:%x\n", &hpm[0], &hpm[1], &hpm[2], &hpm[3],
+			&hpm[4], &hpm[5], &hpm[6], &hpm[7]);
 	return 0;
 }
 #define	ECID_FILE_NAME	"/sys/devices/platform/cpu/uuid"

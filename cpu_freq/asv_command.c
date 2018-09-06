@@ -15,6 +15,8 @@ static const char *gStrAsvCmdStr[] = {
 	"ASVC_GET_TMU1",	//	Get TMU 1
 	"ASVC_ON",			//	PC Application Only
 	"ASVC_OFF",			//	PC Application Only
+	"ASVC_GET_IDS",		//	Get IDS
+	"ASVC_GET_HPM",		//	Get HPM RO
 	"ASVC_MAX",
 };
 
@@ -185,6 +187,8 @@ ASV_RESULT ParseStringToCommand( char *inBuf, int32_t intSize, ASV_COMMAND *cmd,
 #endif
 		break;
 	case ASVC_GET_ECID:
+	case ASVC_GET_IDS:
+	case ASVC_GET_HPM:
 		break;
 		case ASVC_GET_TMU0:		//	Get TMU 0
 		case ASVC_GET_TMU1:		//	Get TMU 1

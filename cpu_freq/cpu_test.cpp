@@ -11,7 +11,7 @@
 #include "dvfsutil.h"
 
 #define	MAX_NUM_CPU_CORE	2
-#define	MAX_INPUT_SIZE		(1024*1024*1)		//	1MB Source
+#define	MAX_INPUT_SIZE		(1024*100)		//	1MB Source
 
 class CCPUTest
 {
@@ -51,6 +51,7 @@ private:
 
 extern "C" int test_cpu_cache( void );
 
+extern "C" int set_new_scheduler(pid_t pid, int policy, int priority);
 void CCPUTest::CpuTestThread( int id )
 {
 	uint8_t *pInBuf = (uint8_t *)malloc(MAX_INPUT_SIZE);
@@ -59,6 +60,12 @@ void CCPUTest::CpuTestThread( int id )
 	uint32_t zipSize, unzipSize;
 	uint64_t start, end;
 	int32_t i;
+
+	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(id, &cpuset);
+
+	//set_new_scheduler(getpid(), SCHED_FIFO, 99);
 
 	printf("%s %d\n",__func__, id);
 	if( !pInBuf || !pZipBuf || !pUnzipBuf )
@@ -112,7 +119,7 @@ void CCPUTest::CpuTestThread( int id )
 			}
 		}
 		end = NX_GetTickCountUs();
-		printf("CPU Test Time = %lldmsec\n", (end - start)/1000 );
+	//	printf("CPU Test Time = %lldmsec\n", (end - start)/1000 );
 	}
 
 	m_Result[id] = ASV_RES_OK;
