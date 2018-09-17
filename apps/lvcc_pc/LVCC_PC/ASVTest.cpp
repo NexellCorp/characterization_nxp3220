@@ -664,7 +664,7 @@ bool CASVTest::CheckCommandResponse()
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -726,7 +726,7 @@ bool CASVTest::GetECIDCmdResponse( unsigned int ecid[4] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -939,7 +939,7 @@ bool CASVTest::GetTMUResponse( int *pTMU )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -1042,7 +1042,7 @@ bool CASVTest::GetIDSResponse( unsigned int IDS[2] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -1105,7 +1105,7 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
