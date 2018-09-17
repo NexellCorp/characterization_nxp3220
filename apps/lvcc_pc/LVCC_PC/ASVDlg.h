@@ -60,7 +60,7 @@ private:
 	unsigned int	m_FreqStart, m_FreqEnd, m_FreqStep;
 	double			m_SysVoltStart, m_SysVoltEnd, m_SysVoltStep;
 	double			m_DeviceVoltStart, m_DeviceVoltEnd, m_DeviceVoltStep;
-	int				m_TestDuration, m_TimeOut;
+	int				m_TestTimeout, m_ResetTimeout;
 
 	double			m_ArmBootUpVolt;
 	double			m_ArmFaultStartVolt, m_ArmFaultEndVolt;
@@ -147,6 +147,10 @@ public:
 	//	Aging Tool
 	CEdit m_EdtNumAging;
 	CButton m_ChkEnAging;
+
+	//	Timeouts
+	CEdit m_EdtResetTimeout;
+	CEdit m_EdtTestTimeout;
 
 	afx_msg void OnBnClickedBtnStart();
 	afx_msg void OnBnClickedBtnStop();

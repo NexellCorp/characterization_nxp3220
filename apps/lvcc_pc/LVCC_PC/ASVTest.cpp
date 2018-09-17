@@ -7,9 +7,6 @@
 #define	SCAN_RETRY_COUNT		3
 #define RESET_RETRY_COUNT		5
 
-#define	HARDWARE_BOOT_DELAY		15000
-#define COMMAND_RESPONSE_DELAY	15000
-
 #define	HARDWARE_RESET_TIME		1000
 
 
@@ -614,7 +611,7 @@ bool CASVTest::WaitBootOnMessage()
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, HARDWARE_BOOT_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.resetTimeout*1000 );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -667,7 +664,7 @@ bool CASVTest::CheckCommandResponse()
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, COMMAND_RESPONSE_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -729,7 +726,7 @@ bool CASVTest::GetECIDCmdResponse( unsigned int ecid[4] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, COMMAND_RESPONSE_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -942,7 +939,7 @@ bool CASVTest::GetTMUResponse( int *pTMU )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, COMMAND_RESPONSE_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -1045,7 +1042,7 @@ bool CASVTest::GetIDSResponse( unsigned int IDS[2] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, COMMAND_RESPONSE_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);
@@ -1108,7 +1105,7 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 	DWORD waitResult;
 	int pos;
 	do{
-		waitResult = WaitForSingleObject( m_hRxSem, COMMAND_RESPONSE_DELAY );
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout );
 		if( WAIT_OBJECT_0 == waitResult )
 		{
 			CNXAutoLock lock(&m_CritRxMsg);

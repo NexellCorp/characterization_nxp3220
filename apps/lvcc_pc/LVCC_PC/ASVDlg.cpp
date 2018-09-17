@@ -108,6 +108,8 @@ void CASVDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDT_VOLT_DEVICE_START, m_EdtVoltDeviceStart);
 	DDX_Control(pDX, IDC_EDT_VOLT_DEVICE_END, m_EdtVoltDeviceEnd);
 	DDX_Control(pDX, IDC_CMB_DEVICE_FREQ, m_CmbDeviceFreq);
+	DDX_Control(pDX, IDC_EDT_RESET_TIMEOUT, m_EdtResetTimeout);
+	DDX_Control(pDX, IDC_EDT_TEST_TIMEOUT, m_EdtTestTimeout);
 }
 
 BEGIN_MESSAGE_MAP(CASVDlg, CDialogEx)
@@ -173,8 +175,6 @@ BOOL CASVDlg::OnInitDialog()
 	m_Temporature	= 25;
 	m_BoardNumber	= 1;
 	m_ChipNumber    = 1;
-	m_TestDuration	= 10;
-	m_TimeOut		= 15;
 
 	SetControlParam();
 
@@ -285,11 +285,13 @@ void CASVDlg::OnBnClickedBtnStart()
 	cfg.armVoltStart  = m_SysVoltStart;
 	cfg.armVoltEnd    = m_SysVoltEnd;
 	cfg.armVoltStep   = m_SysVoltStep;
-	cfg.deviceTypical   = 1.1018;
+	cfg.deviceTypical   = 1.0000;
 	cfg.deviceVoltStart = m_DeviceVoltStart;
 	cfg.deviceVoltEnd   = m_DeviceVoltEnd;
 	cfg.deviceVoltStep  = m_DeviceVoltStep;
-	cfg.timeout       = m_TimeOut;
+
+	cfg.resetTimeout    = m_ResetTimeout;
+	cfg.testTimeout     = m_TestTimeout;
 
 	//
 	//	Change Control Status
@@ -380,10 +382,10 @@ void CASVDlg::GetControlParam()
 	CString strFreqStart, strFreqEnd, strFreqStep;
 	CString strSysVoltStart, strSysVoltEnd, strSysVoltStep;
 	CString strCoreVoltStart, strCoreVoltEnd, strCoreVoltStep;
-	CString strTimeOut;
 	CString strTempo, strBoardNo, strChipNo;
 	CString strVoltFixedCore, strVoltFixedSys;
 	CString strArmFaultStartVolt, starArmFaultEndVolt;
+	CString strResetTimeout, strTestTimeout;
 
 	//	CPU
 	m_EdtCpuFreqStart.GetWindowText(strFreqStart);
@@ -412,10 +414,15 @@ void CASVDlg::GetControlParam()
 	m_EdtBrdNo.GetWindowText(strBoardNo);
 	m_EdtChipNo.GetWindowText(strChipNo);
 
-	m_TimeOut = _wtoi( strTimeOut.GetString() );
 	m_BoardNumber = _wtoi( strBoardNo.GetString() );
 	m_ChipNumber = _wtoi( strChipNo.GetString() );
 	m_Temporature = _wtoi( strTempo.GetString() );
+
+	//	Timeouts
+	m_EdtResetTimeout.GetWindowText(strResetTimeout);
+	m_EdtTestTimeout.GetWindowText(strTestTimeout);
+	m_ResetTimeout = _wtoi( strResetTimeout.GetString() );
+	m_TestTimeout = _wtoi( strTestTimeout.GetString() );
 }
 
 void CASVDlg::SetControlParam()
@@ -423,7 +430,7 @@ void CASVDlg::SetControlParam()
 	CString strFreqStart, strFreqEnd, strFreqStep;
 	CString strSysVoltStart, strSysVoltEnd, strSysVoltStep;
 	CString strDeviceVoltStart, strDeviceVoltEnd, strDeviceVoltStep;
-	CString strTimeDuration, strTimeOut;
+	CString strResetTimeout, strTestTimeout;
 	CString strTempo, strBoardNo, strChipNo;
 	CString strVoltFixedCore, strVoltFixedSys;
 	CString strArmBootUpVolt;
@@ -457,8 +464,11 @@ void CASVDlg::SetControlParam()
 	strDeviceVoltEnd.Format(TEXT("%f"), m_DeviceVoltEnd);
 	strDeviceVoltStep.Format(TEXT("%f"), m_DeviceVoltStep);
 
-	strTimeDuration.Format(TEXT("%d"), m_TestDuration);
-	strTimeOut.Format(TEXT("%d"), m_TimeOut);
+	//	Timeout
+	strResetTimeout.Format(TEXT("%d"), m_ResetTimeout);
+	strTestTimeout.Format(TEXT("%d"), m_TestTimeout);
+	m_EdtResetTimeout.SetWindowText( strResetTimeout );
+	m_EdtTestTimeout.SetWindowText( strTestTimeout );
 
 	m_EdtTemp.SetWindowText( strTempo );
 	m_EdtBrdNo.SetWindowText( strBoardNo );
@@ -940,6 +950,9 @@ typedef struct ASV_SAVE_CONFIG {
 	double			deviceVoltStart;
 	double			deviceVoltEnd;
 	double			deviceVoltStep;
+	//	Timeout Config
+	int				resetTimeout;
+	int				testTimeout;
 }ASV_SAVE_CONFIG;
 
 
@@ -980,9 +993,12 @@ void CASVDlg::LoadConfiguration()
 		m_ArmFaultEndVolt  = pAllCfg->armFaultEnd;
 
 		//	Device Test
-		m_DeviceVoltStart = pAllCfg->deviceVoltStart;
-		m_DeviceVoltEnd   = pAllCfg->deviceVoltEnd;
-		m_DeviceVoltStep  = pAllCfg->deviceVoltStep;
+		m_DeviceVoltStart	= pAllCfg->deviceVoltStart;
+		m_DeviceVoltEnd		= pAllCfg->deviceVoltEnd;
+		m_DeviceVoltStep	= pAllCfg->deviceVoltStep;
+		//	Timeouts
+		m_ResetTimeout		= pAllCfg->resetTimeout;
+		m_TestTimeout		= pAllCfg->testTimeout;
 
 		free( pAllCfg );
 	}
@@ -1015,6 +1031,9 @@ void CASVDlg::SaveConfiguration()
 	cfg.deviceVoltEnd   = m_DeviceVoltEnd  ;
 	cfg.deviceVoltStep  = m_DeviceVoltStep ;
 
+	cfg.resetTimeout	= m_ResetTimeout;
+	cfg.testTimeout		= m_TestTimeout;
+
 	if( INVALID_HANDLE_VALUE != hWriteFile )
 	{
 		WriteFile( hWriteFile, &cfg, sizeof(ASV_SAVE_CONFIG), &wSize, NULL );
@@ -1042,6 +1061,11 @@ void CASVDlg::SetDefaultConfiguration()
 	m_DeviceVoltStart = 0.8;
 	m_DeviceVoltEnd   = 1.0;
 	m_DeviceVoltStep  = 0.0125;
+
+	//	ResetTimeout
+	m_ResetTimeout	= 15;
+	m_TestTimeout	= 15;
+
 }
 
 
