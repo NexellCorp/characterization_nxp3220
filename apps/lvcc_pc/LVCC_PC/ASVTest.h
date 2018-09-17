@@ -48,8 +48,8 @@ typedef struct {
 	int				numDeviceFreq;
 	unsigned int	deviceFreqTable[MAX_FREQ_TABLE];
 
-	int				testTime;
-	int				timeout;
+	int				resetTimeout;
+	int				testTimeout;
 } ASV_TEST_CONFIG;
 
 typedef struct {
