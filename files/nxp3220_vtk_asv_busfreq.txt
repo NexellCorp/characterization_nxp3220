@@ -1,0 +1,2 @@
+bootdelay=0
+bootcmd=ext4load mmc 0 44000000 zImage;ext4load mmc 0 46000000 nxp3220-vtk-asv-devfs.dtb;bootz 44000000 - 46000000
