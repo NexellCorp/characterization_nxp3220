@@ -1113,7 +1113,7 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 			{
 				if( !strncmp( m_RxMessage, "SUCCESS", 7 ) )
 				{
-					sscanf( m_RxMessage, "SUCCESS : HPM=%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
+					sscanf( m_RxMessage, "SUCCESS : HPM=%03x-%03x-%03x-%03x-%03x-%03x-%03x-%03x\n",
 							&hpm[0], &hpm[1], &hpm[2], &hpm[3], &hpm[4], &hpm[5], &hpm[6], &hpm[7] );
 					m_RxMsgLen-=pos;
 					memmove( m_RxMessage, m_RxMessage + pos, m_RxMsgLen );
