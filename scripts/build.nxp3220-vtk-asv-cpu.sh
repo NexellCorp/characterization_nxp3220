@@ -74,7 +74,7 @@ UBOOT_BINGEN="$BINGEN_EXE -n $UBOOT_NSIH -i $RESULT/u-boot.bin
 
 # PARAMS
 MAKE_PARAMS="$MAKE_ENV -s 16384 -o $RESULT/params.bin 
-		characterization/files/nxp3220_vtk_asv_cpufreq.txt"
+		characterization/files/params_env_asv_cpufreq.txt"
 
 # Images BUILD	
 MAKE_EXT4FS_EXE="$BASEDIR/characterization/bin/make_ext4fs"
