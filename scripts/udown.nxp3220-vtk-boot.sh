@@ -2,7 +2,7 @@
 
 BASEDIR="$(cd "$(dirname "$0")" && pwd)/../.."
 RESULT="$BASEDIR/result"
-TARGET=artik310s
+TARGET=nxp3220
 
 DN_IMAGES=(
 	"TARGET: $TARGET"
