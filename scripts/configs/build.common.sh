@@ -110,7 +110,7 @@ function pre_boot_image () {
 	cp -a ${RESULT}/${DTB_BIN} ${RESULT}/boot;
 	if [ -f ${UBOOT_LOGO_BMP} ]; then
 		cp -a ${UBOOT_LOGO_BMP} ${RESULT}/boot;
-	fi	
+	fi
 }
 
 if [[ ${IMAGE_TYPE} == "ubi" ]]; then
