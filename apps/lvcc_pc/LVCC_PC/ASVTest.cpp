@@ -69,7 +69,7 @@ static const int MP8848_MAX_VTABLE = 128;
 
 #define	MIN_VOLTAGE_STEP		(0.0125)
 #define TYPICAL_CPU_VOLTAGE		(1.00000)
-#define ALL_CPU_WORKING_VOLTAGE	(1.20000)
+#define ALL_CPU_WORKING_VOLTAGE	(1.40000)
 #define TYPICAL_CPU_FREQ		(800000000)
 #define TYPICAL_DEVICE_FREQ		(333000000)
 #define PMIC_TYPE				PMIC_SM5011
@@ -207,10 +207,13 @@ bool CASVTest::Scan()
 #if 1
 	unsigned int ids_hpm[10];
 	unsigned int ecid[4];
-	if( GetECID(ecid) && GetIDS(ids_hpm) && GetHPM(&ids_hpm[2]) )
+	unsigned int hpm = 0;
+
+	if( GetECID(ecid) && GetIDS(ids_hpm) && GetHPM(&ids_hpm[2]) && GetRUNCPUHPM(&hpm) )
 	{
 		m_cbEventFunc( m_pcbArg, ASVT_EVT_ECID, ecid );
 		m_cbEventFunc( m_pcbArg, ASVT_EVT_IDS_HPM, ids_hpm );
+		m_cbEventFunc( m_pcbArg, ASVT_EVT_CPUHPM, &hpm );
 		return true;
 	}
 	return false;
@@ -467,6 +470,7 @@ void CASVTest::FindLVCCThread()
 	int freqIndex = 0;
 	float lvcc = -1;
 	int tmu[2];
+	unsigned int hpm;
 	ASV_EVT_DATA evtData;
 	DWORD startTick, endTick;
 
@@ -502,13 +506,14 @@ void CASVTest::FindLVCCThread()
 			startTick = GetTickCount();
 			HardwareReset();
 			lvcc = FastTestLoop( ASVM_CPU, frequency, tmu );
-
+			GetRUNCPUHPM(&hpm);
 			//	Find TMU Data
 			endTick = GetTickCount();
 			if( m_cbEventFunc )
 			{
 				evtData.module = ASVM_CPU;
 				evtData.frequency = frequency;
+				evtData.cpu_hpm =  hpm;
 				evtData.lvcc = lvcc;
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
@@ -1113,7 +1118,7 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 			{
 				if( !strncmp( m_RxMessage, "SUCCESS", 7 ) )
 				{
-					sscanf( m_RxMessage, "SUCCESS : HPM=%03x-%03x-%03x-%03x-%03x-%03x-%03x-%03x\n",
+				sscanf( m_RxMessage, "SUCCESS : HPM=%03x-%03x-%03x-%03x-%03x-%03x-%03x-%03x\n",
 							&hpm[0], &hpm[1], &hpm[2], &hpm[3], &hpm[4], &hpm[5], &hpm[6], &hpm[7] );
 					m_RxMsgLen-=pos;
 					memmove( m_RxMessage, m_RxMessage + pos, m_RxMsgLen );
@@ -1136,6 +1141,68 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 			{
 				char s[128];
 				sprintf( s, "GetIDSResponse : Response Timeout");
+				m_cbMessageFunc( m_pcbArg, s, strlen(s));
+				m_RxMessage[m_RxMsgLen] = '\n';
+				m_RxMessage[m_RxMsgLen+1] = '\0';
+				m_cbMessageFunc( m_pcbArg, m_RxMessage, 0 );
+			}
+			return false;
+		}
+	}while(1);
+	return true;
+}
+
+bool CASVTest::GetRUNCPUHPM(unsigned int *hpm)
+{
+	char cmdBuf[MAX_CMD_STR];
+	memset( cmdBuf, 0, sizeof(cmdBuf) );
+	ASV_PARAM param = {0};
+
+	MakeCommandString( cmdBuf, sizeof(cmdBuf), ASVC_GET_CPUHPM, ASVM_CPU, param );
+	if( m_pCom )
+	{
+		m_pCom->WriteData(cmdBuf, strlen(cmdBuf));
+	}
+
+	return GetHPMRUNCPUResponse( hpm );
+}
+
+bool CASVTest::GetHPMRUNCPUResponse(unsigned int *hpm)
+{
+	DWORD waitResult;
+	int pos;
+	do{
+		waitResult = WaitForSingleObject( m_hRxSem, m_TestConfig.testTimeout*1000 );
+		if( WAIT_OBJECT_0 == waitResult )
+		{
+			CNXAutoLock lock(&m_CritRxMsg);
+			if( FindLineFeed( m_RxMessage, m_RxMsgLen, &pos ) )
+			{
+				if( !strncmp( m_RxMessage, "SUCCESS", 7 ) )
+				{
+
+					sscanf( m_RxMessage, "SUCCESS : HPM=%03x\n",hpm);
+					m_RxMsgLen-=pos;
+					memmove( m_RxMessage, m_RxMessage + pos, m_RxMsgLen );
+					return true;
+				}
+				else if( !strncmp( m_RxMessage, "FAIL", 4 ) )
+				{
+					m_RxMsgLen-=pos;
+					memmove( m_RxMessage, m_RxMessage + pos, m_RxMsgLen );
+					return false;
+				}
+				m_RxMsgLen-=pos;
+				memmove( m_RxMessage, m_RxMessage + pos, m_RxMsgLen );
+				continue;
+			}
+		}
+		else if( WAIT_TIMEOUT == waitResult )
+		{
+			if( m_cbMessageFunc )
+			{
+				char s[128];
+				sprintf( s, "GetCPUHPMResponse : Response Timeout");
 				m_cbMessageFunc( m_pcbArg, s, strlen(s));
 				m_RxMessage[m_RxMsgLen] = '\n';
 				m_RxMessage[m_RxMsgLen+1] = '\0';

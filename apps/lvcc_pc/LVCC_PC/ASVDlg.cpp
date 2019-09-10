@@ -598,6 +598,16 @@ void CASVDlg::ASVEventCallback( void *pArg, ASVT_EVT_TYPE evtCode, void *evtData
 			pObj->OnBnClickedBtnStop();
 		}
 	}
+	else if( ASVT_EVT_CPUHPM == evtCode )
+	{
+		pObj->WriteEventData( evtCode, evtData );
+		if( pObj->m_ChipInfoMode )
+		{
+			//	Write Chip Info Data
+			pObj->m_bStartTesting = false;
+			pObj->OnBnClickedBtnStop();
+		}
+	}
 	else if( ASVT_EVT_DONE == evtCode )
 	{
 		EB_Printf( &pObj->m_EdtResult, TEXT("==================== All Tests Done ======================\n") );
@@ -738,6 +748,13 @@ void CASVDlg::WriteEventData( ASVT_EVT_TYPE evtType, void *evtData )
 			m_pASVTest->ParseECID( ecid, &m_ChipInfo );
 		}
 	}
+	
+	else if( ASVT_EVT_CPUHPM == evtType )
+	{
+		unsigned int *hpm = (unsigned int *)evtData;
+		m_cpuHPM = *hpm;
+		EB_Printf( &m_EdtResult, TEXT("HPM : %d\n"),m_cpuHPM);
+	}
 	else if( ASVT_EVT_IDS_HPM == evtType )
 	{
 		unsigned int *ids_hpm = (unsigned int*)evtData;
@@ -821,6 +838,8 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\tHPM_5"
 				"\tHPM_6"
 				"\tHPM_7"
+				"\tCPU_HPM"
+				"\tRUN_HPM"
 				"\tBoard No."
 				"\tTemp."
 				"\tDomain"
@@ -869,7 +888,9 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\t%d"		//	HPM_5
 				"\t%d"		//	HPM_6
 				"\t%d"		//	HPM_7
-				"\t%d"		//	Board Number
+				"\t%d"		//	BOOT CPUHPMe
+				"\t%d"		//	RUN HPM
+				"\t%x"		//	Board Number
 				"\t%d"		//	Temporature
 				"\t%s"		//	Domain
 				"\t%d"		//	Speed
@@ -894,6 +915,8 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				m_HPM[5],
 				m_HPM[6],
 				m_HPM[7],
+				m_cpuHPM,
+				pEvtData->cpu_hpm,
 				m_BoardNumber,
 				m_Temporature,
 				ASVModuleIDToStringSimple( pEvtData->module ),
@@ -1050,7 +1073,7 @@ void CASVDlg::SetDefaultConfiguration()
 	m_FreqEnd		= 1000000000;
 	m_FreqStep		= 100000000;
 	m_SysVoltStart  = 0.80;
-	m_SysVoltEnd    = 1.2;
+	m_SysVoltEnd    = 1.45;
 	m_SysVoltStep   = 0.0125;
 	m_ArmBootUpVolt = 1.0000;
 	m_ArmFaultStartVolt = 1.0;
@@ -1059,7 +1082,7 @@ void CASVDlg::SetDefaultConfiguration()
 	//	Device Test
 	m_ChkDevice.SetCheck(BST_CHECKED);
 	m_DeviceVoltStart = 0.8;
-	m_DeviceVoltEnd   = 1.0;
+	m_DeviceVoltEnd   = 1.2;
 	m_DeviceVoltStep  = 0.0125;
 
 	//	ResetTimeout

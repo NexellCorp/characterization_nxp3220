@@ -17,6 +17,7 @@ static const char *gStrAsvCmdStr[] = {
 	"ASVC_OFF",			//	PC Application Only
 	"ASVC_GET_IDS",		//	Get IDS
 	"ASVC_GET_HPM",		//	Get HPM
+	"ASVC_GET_CPUHPM",	//	Get CPUHPM
 	"ASVC_MAX",
 };
 
