@@ -55,6 +55,8 @@ private:
 
 	unsigned int	m_IDS[2];
 	unsigned int	m_HPM[8];
+	unsigned int 	m_cpuHPM;
+	unsigned int 	m_rcpuHPM;
 
 	unsigned int	m_BoardNumber, m_ChipNumber;
 	unsigned int	m_FreqStart, m_FreqEnd, m_FreqStep;

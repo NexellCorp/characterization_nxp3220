@@ -14,10 +14,11 @@ typedef enum {
 	ASVC_STATUS,
 	ASVC_GET_TMU0,		//	Get TMU 0
 	ASVC_GET_TMU1,		//	Get TMU 1
-	ASVC_ON,			//	PC Application Only
-	ASVC_OFF,			//	PC Application Only
+	ASVC_ON,		//	PC Application Only
+	ASVC_OFF,		//	PC Application Only
 	ASVC_GET_IDS,		//	Get IDS
-	ASVC_GET_HPM,		//	Get HPM
+	ASVC_GET_HPM,		//	Get HPM RO
+	ASVC_GET_CPUHPM,	//	Get CPUHPM 
 	ASVC_MAX,
 }ASV_COMMAND;
 
