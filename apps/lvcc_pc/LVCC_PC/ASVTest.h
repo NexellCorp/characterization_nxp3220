@@ -17,6 +17,7 @@ typedef enum {
 	ASVT_EVT_DONE = 0,
 	ASVT_EVT_ECID,
 	ASVT_EVT_IDS_HPM,
+	ASVT_EVT_CPUHPM,
 	ASVT_EVT_REPORT_RESULT,
 } ASVT_EVT_TYPE;
 
@@ -55,6 +56,7 @@ typedef struct {
 typedef struct {
 	ASV_MODULE_ID	module;
 	unsigned int	frequency;
+	unsigned int	cpu_hpm;
 	float			lvcc;			//	volt
 	int				time;			//	processing time in milli second
 	int				tmuStart;
@@ -139,10 +141,12 @@ private:
 	bool	GetHPM(unsigned int RO[8]);
 	bool	GetHPMResponse(unsigned int RO[8]);
 
+	bool	GetRUNCPUHPM(unsigned int *hpm);
+	bool	GetHPMRUNCPUResponse(unsigned int *hpm);
+
 	static void RxComRxCallbackStub( void *pArg, char *buf, int len )
 	{
 		((CASVTest *)pArg)->RxComRxCallback( buf, len );
-		
 	}
 	void RxComRxCallback( char *buf, int len );
 
