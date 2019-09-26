@@ -73,7 +73,7 @@ function post_build_uboot () {
 	cp ${UBOOT_DIR}/${UBOOT_BIN}.raw ${RESULT}
 
 	# create param.bin
-	${TOOL_MKPARAM} ${UBOOT_DIR} ${LINUX_TOOLCHAIN} ${RESULT}
+	${UBOOT_DIR}/tools/mkenvimage -s 16384 -o ${RESULT}/params_env.bin ${PARAM_TXT}
 }
 
 function pre_build_kernel () {
