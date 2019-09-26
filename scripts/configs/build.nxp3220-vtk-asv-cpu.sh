@@ -32,6 +32,9 @@ TARGET_BOOT_IMAGE_SIZE=32M
 TARGET_ROOT_IMAGE_SIZE=1G
 TARGET_DATA_IMAGE_SIZE=6G
 
+# For uboot enviroment
+export PARAM_TXT=${BASEDIR}/characterization/files/params_env_asv_cpufreq.txt
+
 # build script
 BUILD_CONFIG_DIR="$(cd "$(dirname "$0")" && pwd)"/configs
 source $BUILD_CONFIG_DIR/build.common.sh
