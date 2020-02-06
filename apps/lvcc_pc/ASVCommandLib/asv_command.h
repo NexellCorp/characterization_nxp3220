@@ -14,20 +14,23 @@ typedef enum {
 	ASVC_STATUS,
 	ASVC_GET_TMU0,		//	Get TMU 0
 	ASVC_GET_TMU1,		//	Get TMU 1
-	ASVC_ON,		//	PC Application Only
-	ASVC_OFF,		//	PC Application Only
+	ASVC_ON,			//	PC Application Only
+	ASVC_OFF,			//	PC Application Only
 	ASVC_GET_IDS,		//	Get IDS
 	ASVC_GET_HPM,		//	Get HPM RO
-	ASVC_GET_CPUHPM,	//	Get CPUHPM 
+	ASVC_GET_CPUHPM,	//	Get BOOT CPUHPM RO
+	ASVC_GET_CORE_HPM,	//	Get Core HPM
+	ASVC_SET_AXI_FREQ,	//	Set AXI Frequency : 
+						//		It was orignally created to set AXI bus freqeuncy for NXP3220's MM Block.
 	ASVC_MAX,
 }ASV_COMMAND;
 
 typedef enum {
 	ASVM_CPU,
-	ASVM_VPU,
-	ASVM_3D,
-	ASVM_LDO_SYS,
-	ASVM_DEVICE,
+	ASVM_MM,			//	MM BLOCK
+	ASVM_USB,			//	MSB BLOCK
+	ASVM_HSIF,			//	HSIF BLOCK
+	ASVM_SYS,			//	SYS BUS
 	ASVM_MAX,
 }ASV_MODULE_ID;
 

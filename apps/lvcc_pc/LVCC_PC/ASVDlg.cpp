@@ -26,14 +26,6 @@ static const char *gStrCornorTable[] ={
 	"FS",
 };
 
-static const char *gStrDeviceFreqTable[]  = {
-	"100",
-	"166",
-	"333",
-	"ALL",
-};
-
-
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
 
 class CAboutDlg : public CDialogEx
@@ -96,20 +88,32 @@ void CASVDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BTN_STOP, m_BtnStop);
 	DDX_Control(pDX, IDC_BTN_HW_RESET, m_BtnHWReset);
 	DDX_Control(pDX, IDC_BTN_OUT_PATH, m_BtnOutPath);
-	DDX_Control(pDX, IDC_CMB_CPU_SINGLE_FREQ, m_CmbCpuSingleFreq);
 	DDX_Control(pDX, IDC_CMB_CORNER, m_CmbCorner);
 	DDX_Control(pDX, IDC_EDT_TEMPORATURE, m_EdtTemp);
 	DDX_Control(pDX, IDC_EDT_BOARD_NO, m_EdtBrdNo);
 	DDX_Control(pDX, IDC_CHK_CHIP_INFO_MODE, m_ChkChipInfoMode);
-	DDX_Control(pDX, IDC_EDT_NUM_AGING, m_EdtNumAging);
-	DDX_Control(pDX, IDC_CHK_ENABLE_AGING, m_ChkEnAging);
 	DDX_Control(pDX, IDC_EDT_CHIP_NO, m_EdtChipNo);
-	DDX_Control(pDX, IDC_CHK_DEVICE, m_ChkDevice);
-	DDX_Control(pDX, IDC_EDT_VOLT_DEVICE_START, m_EdtVoltDeviceStart);
-	DDX_Control(pDX, IDC_EDT_VOLT_DEVICE_END, m_EdtVoltDeviceEnd);
-	DDX_Control(pDX, IDC_CMB_DEVICE_FREQ, m_CmbDeviceFreq);
 	DDX_Control(pDX, IDC_EDT_RESET_TIMEOUT, m_EdtResetTimeout);
 	DDX_Control(pDX, IDC_EDT_TEST_TIMEOUT, m_EdtTestTimeout);
+	DDX_Control(pDX, IDC_CHK_MM, m_ChkMM);
+	DDX_Control(pDX, IDC_EDT_MM_FREQ_START, m_EdtMMFreqStart);
+	DDX_Control(pDX, IDC_EDT_MM_FREQ_END, m_EdtMMFreqEnd);
+	DDX_Control(pDX, IDC_EDT_MM_FREQ_STEP, m_EdtMMFreqStep);
+	DDX_Control(pDX, IDC_EDT_MM_VOLT_START, m_EdtMMVoltStart);
+	DDX_Control(pDX, IDC_EDT_MM_VOLT_END, m_EdtMMVoltEnd);
+	DDX_Control(pDX, IDC_CHK_USB, m_ChkUsb);
+	DDX_Control(pDX, IDC_EDT_USB_FREQ_START, m_EdtUsbFreqStart);
+	DDX_Control(pDX, IDC_EDT_USB_FREQ_END, m_EdtUsbFreqEnd);
+	DDX_Control(pDX, IDC_EDT_USB_FREQ_STEP, m_EdtUsbFreqStep);
+	DDX_Control(pDX, IDC_EDT_USB_VOLT_START, m_EdtUsbVoltStart);
+	DDX_Control(pDX, IDC_EDT_USB_VOLT_END, m_EdtUsbVoltEnd);
+	DDX_Control(pDX, IDC_CHK_SYSBUS, m_ChkSysBus);
+	DDX_Control(pDX, IDC_EDT_SYSBUS_FREQ_START, m_EdtSysBusFreqStart);
+	DDX_Control(pDX, IDC_EDT_SYSBUS_FREQ_END, m_EdtSysBusFreqEnd);
+	DDX_Control(pDX, IDC_EDT_SYSBUS_FREQ_STEP, m_EdtSysBusFreqStep);
+	DDX_Control(pDX, IDC_EDT_SYSBUS_VOLT_START, m_EdtSysBusVoltStart);
+	DDX_Control(pDX, IDC_EDT_SYSBUS_VOLT_END, m_EdtSysBusVoltEnd);
+	DDX_Control(pDX, IDC_CMB_MM_AXI, m_CmbMMAxi);
 }
 
 BEGIN_MESSAGE_MAP(CASVDlg, CDialogEx)
@@ -125,7 +129,9 @@ BEGIN_MESSAGE_MAP(CASVDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHK_CHIP_INFO_MODE, &CASVDlg::OnBnClickedChkChipInfoMode)
 	ON_BN_CLICKED(IDC_CHK_CPU, &CASVDlg::OnBnClickedChkCpu)
 	ON_BN_CLICKED(IDC_BTN_SAVE_CONFIG, &CASVDlg::OnBnClickedBtnSaveConfig)
-	ON_BN_CLICKED(IDC_CHK_DEVICE, &CASVDlg::OnBnClickedChkDevice)
+	ON_BN_CLICKED(IDC_CHK_MM, &CASVDlg::OnBnClickedChkMm)
+	ON_BN_CLICKED(IDC_CHK_USB, &CASVDlg::OnBnClickedChkUsb)
+	ON_BN_CLICKED(IDC_CHK_SYSBUS, &CASVDlg::OnBnClickedChkSysbus)
 END_MESSAGE_MAP()
 
 
@@ -172,9 +178,6 @@ BOOL CASVDlg::OnInitDialog()
 
 	//
 	LoadConfiguration();
-	m_Temporature	= 25;
-	m_BoardNumber	= 1;
-	m_ChipNumber    = 1;
 
 	SetControlParam();
 
@@ -256,11 +259,14 @@ HCURSOR CASVDlg::OnQueryDragIcon()
 
 void CASVDlg::OnBnClickedBtnStart()
 {
+#if ENABLE_CMD_TEST
+#else
 	if( !m_pCom )
 	{
 		MessageBox(TEXT("Comport Error!!!"));
 		return;
 	}
+#endif
 
 	//	Update Output File Name
 	CString strOutFileName;
@@ -269,29 +275,6 @@ void CASVDlg::OnBnClickedBtnStart()
 	WideCharToMultiByte( CP_ACP, 0, strOutFileName, strOutFileName.GetLength(), m_OutputFileName, sizeof(m_OutputFileName), NULL, NULL );
 
 	GetControlParam();
-	ASV_TEST_CONFIG cfg;
-
-	memset( &cfg, 0, sizeof(cfg) );
-
-	cfg.enableCpu     = ( BST_CHECKED == m_ChkCpu.GetCheck() ) ? 1 : 0;
-	cfg.enableDevice  = ( BST_CHECKED == m_ChkDevice.GetCheck() ) ? 1 : 0;
-
-	cfg.freqStart     = m_FreqStart;
-	cfg.freqEnd       = m_FreqEnd;
-	cfg.freqStep      = m_FreqStep;
-	cfg.armBootUp     = m_ArmBootUpVolt;
-	cfg.armFaultStart = m_ArmFaultStartVolt;
-	cfg.armFaultEnd   = m_ArmFaultEndVolt;
-	cfg.armVoltStart  = m_SysVoltStart;
-	cfg.armVoltEnd    = m_SysVoltEnd;
-	cfg.armVoltStep   = m_SysVoltStep;
-	cfg.deviceTypical   = 1.0000;
-	cfg.deviceVoltStart = m_DeviceVoltStart;
-	cfg.deviceVoltEnd   = m_DeviceVoltEnd;
-	cfg.deviceVoltStep  = m_DeviceVoltStep;
-
-	cfg.resetTimeout    = m_ResetTimeout;
-	cfg.testTimeout     = m_TestTimeout;
 
 	//
 	//	Change Control Status
@@ -301,8 +284,6 @@ void CASVDlg::OnBnClickedBtnStart()
 	m_BtnStart.EnableWindow( FALSE );
 	m_BtnHWReset.EnableWindow( FALSE );
 	m_ChkCpu.EnableWindow( FALSE );
-	m_ChkDevice.EnableWindow( FALSE );
-	m_CmbCpuSingleFreq.EnableWindow( FALSE );
 	m_ChkChipInfoMode.EnableWindow( FALSE );
 
 	m_EdtEcid.SetWindowText(TEXT(""));
@@ -316,7 +297,7 @@ void CASVDlg::OnBnClickedBtnStart()
 			m_OutputNumber = 0;
 			WriteStartLog();
 		}
-		m_pASVTest->SetTestConfig( &cfg, m_pCom );
+		m_pASVTest->SetTestConfig( &m_TestConfig, m_pCom );
 
 		m_StartTick = GetTickCount();
 
@@ -339,9 +320,6 @@ void CASVDlg::OnBnClickedBtnStop()
 		m_BtnStart.EnableWindow( TRUE );
 		m_BtnHWReset.EnableWindow( TRUE );
 		m_ChkCpu.EnableWindow( TRUE );
-		m_ChkDevice.EnableWindow( TRUE );
-
-		m_CmbCpuSingleFreq.EnableWindow( TRUE );
 
 		m_ChkChipInfoMode.EnableWindow( TRUE );
 
@@ -379,108 +357,157 @@ void CASVDlg::OnBnClickedBtnClearLog()
 
 void CASVDlg::GetControlParam()
 {
-	CString strFreqStart, strFreqEnd, strFreqStep;
-	CString strSysVoltStart, strSysVoltEnd, strSysVoltStep;
-	CString strCoreVoltStart, strCoreVoltEnd, strCoreVoltStep;
-	CString strTempo, strBoardNo, strChipNo;
-	CString strVoltFixedCore, strVoltFixedSys;
-	CString strArmFaultStartVolt, starArmFaultEndVolt;
-	CString strResetTimeout, strTestTimeout;
 
+	//
+	//	General Information
+	//
+	CString strTempo, strBoardNo, strChipNo;
+	m_EdtTemp.GetWindowText(strTempo);
+	m_EdtBrdNo.GetWindowText(strBoardNo);
+	m_EdtChipNo.GetWindowText(strChipNo);
+	m_TestConfig.temporature = _wtoi(strTempo.GetString());
+	m_TestConfig.boardNumber = _wtoi(strBoardNo.GetString());
+	m_TestConfig.chipNumber = _wtoi(strChipNo.GetString());
+
+	//
+	//	Test Information
+	//
+	CString strFreqStart, strFreqEnd, strFreqStep;
+	CString strVoltStart, strVoltEnd, strCmb;
 	//	CPU
 	m_EdtCpuFreqStart.GetWindowText(strFreqStart);
 	m_EdtCpuFreqEnd.GetWindowText(strFreqEnd);
 	m_EdtCpuFreqStep.GetWindowText(strFreqStep);
-	m_EdtVoltStart.GetWindowText(strSysVoltStart);
-	m_EdtVoltEnd.GetWindowText(strSysVoltEnd);
+	m_EdtVoltStart.GetWindowText(strVoltStart);
+	m_EdtVoltEnd.GetWindowText(strVoltEnd);
+	m_TestConfig.enableCpu = (m_ChkCpu.GetCheck() == BST_CHECKED) ? 1 : 0;
+	m_TestConfig.arm.freqStart = wcstoul(strFreqStart.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.arm.freqEnd = wcstoul(strFreqEnd.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.arm.freqStep = wcstoul(strFreqStep.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.arm.voltStart = _wtof(strVoltStart.GetString());
+	m_TestConfig.arm.voltEnd = _wtof(strVoltEnd.GetString());
 
-	m_FreqStart    = wcstoul( strFreqStart.GetString(), NULL, 10 ) * 1000000;
-	m_FreqEnd      = wcstoul( strFreqEnd.GetString(), NULL, 10 ) * 1000000;
-	m_FreqStep     = wcstoul( strFreqStep.GetString(), NULL, 10 ) * 1000000;
-	m_SysVoltStart = _wtof( strSysVoltStart.GetString() );
-	m_SysVoltEnd   = _wtof( strSysVoltEnd.GetString() );
-	m_SysVoltStep  = _wtof( strSysVoltStep.GetString() );
-	m_ArmFaultStartVolt = _wtof( strArmFaultStartVolt.GetString() );
-	m_ArmFaultEndVolt   = _wtof( starArmFaultEndVolt.GetString() );
+	//	MM (VPU)
+	m_EdtMMFreqStart.GetWindowText(strFreqStart);
+	m_EdtMMFreqEnd.GetWindowText(strFreqEnd);
+	m_EdtMMFreqStep.GetWindowText(strFreqStep);
+	m_EdtMMVoltStart.GetWindowText(strVoltStart);
+	m_EdtMMVoltEnd.GetWindowText(strVoltEnd);
+	m_CmbMMAxi.GetWindowText(strCmb);
+	m_TestConfig.enableMM = (m_ChkMM.GetCheck() == BST_CHECKED) ? 1 : 0;
+	m_TestConfig.mm.freqStart = wcstoul(strFreqStart.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.mm.freqEnd = wcstoul(strFreqEnd.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.mm.freqStep = wcstoul(strFreqStep.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.mm.voltStart = _wtof(strVoltStart.GetString());
+	m_TestConfig.mm.voltEnd = _wtof(strVoltEnd.GetString());
+	m_TestConfig.mm.freqOther = (strCmb==TEXT("333"))?333333334:400000000;
 
+	//	USB
+	m_EdtUsbFreqStart.GetWindowText(strFreqStart);
+	m_EdtUsbFreqEnd.GetWindowText(strFreqEnd);
+	m_EdtUsbFreqStep.GetWindowText(strFreqStep);
+	m_EdtUsbVoltStart.GetWindowText(strVoltStart);
+	m_EdtUsbVoltEnd.GetWindowText(strVoltEnd);
+	m_TestConfig.enableUSB = (m_ChkUsb.GetCheck() == BST_CHECKED) ? 1 : 0;
+	m_TestConfig.usb.freqStart = wcstoul(strFreqStart.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.usb.freqEnd = wcstoul(strFreqEnd.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.usb.freqStep = wcstoul(strFreqStep.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.usb.voltStart = _wtof(strVoltStart.GetString());
+	m_TestConfig.usb.voltEnd = _wtof(strVoltEnd.GetString());
 
-	m_EdtVoltDeviceStart.GetWindowText(strCoreVoltStart);
-	m_EdtVoltDeviceEnd.GetWindowText(strCoreVoltEnd);
-	m_DeviceVoltStart = _wtof( strCoreVoltStart.GetString() );
-	m_DeviceVoltEnd   = _wtof( strCoreVoltEnd.GetString() );
-	m_DeviceVoltStep  = _wtof( strCoreVoltStep.GetString() );
-
-	m_EdtTemp.GetWindowText(strTempo);
-	m_EdtBrdNo.GetWindowText(strBoardNo);
-	m_EdtChipNo.GetWindowText(strChipNo);
-
-	m_BoardNumber = _wtoi( strBoardNo.GetString() );
-	m_ChipNumber = _wtoi( strChipNo.GetString() );
-	m_Temporature = _wtoi( strTempo.GetString() );
+	//	System Bus
+	m_EdtSysBusFreqStart.GetWindowText(strFreqStart);
+	m_EdtSysBusFreqEnd.GetWindowText(strFreqEnd);
+	m_EdtSysBusFreqStep.GetWindowText(strFreqStep);
+	m_EdtSysBusVoltStart.GetWindowText(strVoltStart);
+	m_EdtSysBusVoltEnd.GetWindowText(strVoltEnd);
+	m_TestConfig.enableSysBus = (m_ChkSysBus.GetCheck() == BST_CHECKED) ? 1 : 0;
+	m_TestConfig.bus.freqStart = wcstoul(strFreqStart.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.bus.freqEnd = wcstoul(strFreqEnd.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.bus.freqStep = wcstoul(strFreqStep.GetString(), NULL, 10) * 1000000;
+	m_TestConfig.bus.voltStart = _wtof(strVoltStart.GetString());
+	m_TestConfig.bus.voltEnd = _wtof(strVoltEnd.GetString());
 
 	//	Timeouts
+	CString strResetTimeout, strTestTimeout;
 	m_EdtResetTimeout.GetWindowText(strResetTimeout);
 	m_EdtTestTimeout.GetWindowText(strTestTimeout);
-	m_ResetTimeout = _wtoi( strResetTimeout.GetString() );
-	m_TestTimeout = _wtoi( strTestTimeout.GetString() );
+	m_TestConfig.resetTimeout= _wtoi( strResetTimeout.GetString() );
+	m_TestConfig.testTimeout = _wtoi( strTestTimeout.GetString() );
 }
 
 void CASVDlg::SetControlParam()
 {
 	CString strFreqStart, strFreqEnd, strFreqStep;
-	CString strSysVoltStart, strSysVoltEnd, strSysVoltStep;
-	CString strDeviceVoltStart, strDeviceVoltEnd, strDeviceVoltStep;
+	CString strVoltStart, strVoltEnd;
 	CString strResetTimeout, strTestTimeout;
 	CString strTempo, strBoardNo, strChipNo;
 	CString strVoltFixedCore, strVoltFixedSys;
-	CString strArmBootUpVolt;
-	CString strArmFaultStartVolt, strArmFaultEndVolt;
 	CString strDevFreq;
 
-	strTempo.Format(TEXT("%d"), m_Temporature);
-	strBoardNo.Format(TEXT("%d"), m_BoardNumber);
-	strChipNo.Format(TEXT("%d"), m_ChipNumber);
+	//	General Information
+	strTempo.Format(TEXT("%d"), m_TestConfig.temporature);
+	strBoardNo.Format(TEXT("%d"), m_TestConfig.boardNumber);
+	strChipNo.Format(TEXT("%d"), m_TestConfig.chipNumber);
+	m_EdtTemp.SetWindowText(strTempo);
+	m_EdtBrdNo.SetWindowText(strBoardNo);
+	m_EdtChipNo.SetWindowText(strChipNo);
 
-	strFreqStart.Format(TEXT("%d"), m_FreqStart/1000000);
-	strFreqEnd.Format(TEXT("%d"), m_FreqEnd/1000000);
-	strFreqStep.Format(TEXT("%d"), m_FreqStep/1000000);
-	strSysVoltStart.Format(TEXT("%f"), m_SysVoltStart);
-	strSysVoltEnd.Format(TEXT("%f"),   m_SysVoltEnd);
-	strSysVoltStep.Format(TEXT("%f"),  m_SysVoltStep);
-	strArmBootUpVolt.Format(TEXT("%f"),  m_ArmBootUpVolt);
-	strArmFaultStartVolt.Format(TEXT("%f"),  m_ArmFaultStartVolt);
-	strArmFaultEndVolt.Format(TEXT("%f"),  m_ArmFaultEndVolt);
-
-
-	for( int i=0 ; i< 4 ; i++ )
-	{
-		strDevFreq.Format(TEXT("%S"),  gStrDeviceFreqTable[i]);
-		m_CmbDeviceFreq.AddString( strDevFreq );
-	}
-	m_CmbDeviceFreq.SetCurSel(3);
-
-
-	strDeviceVoltStart.Format(TEXT("%f"), m_DeviceVoltStart);
-	strDeviceVoltEnd.Format(TEXT("%f"), m_DeviceVoltEnd);
-	strDeviceVoltStep.Format(TEXT("%f"), m_DeviceVoltStep);
-
-	//	Timeout
-	strResetTimeout.Format(TEXT("%d"), m_ResetTimeout);
-	strTestTimeout.Format(TEXT("%d"), m_TestTimeout);
-	m_EdtResetTimeout.SetWindowText( strResetTimeout );
-	m_EdtTestTimeout.SetWindowText( strTestTimeout );
-
-	m_EdtTemp.SetWindowText( strTempo );
-	m_EdtBrdNo.SetWindowText( strBoardNo );
-	m_EdtChipNo.SetWindowText( strChipNo );
+	//	Arm
+	strFreqStart.Format(TEXT("%d"), m_TestConfig.arm.freqStart / 1000000);
+	strFreqEnd.Format(TEXT("%d"), m_TestConfig.arm.freqEnd / 1000000);
+	strFreqStep.Format(TEXT("%d"), m_TestConfig.arm.freqStep / 1000000);
+	strVoltStart.Format(TEXT("%f"), m_TestConfig.arm.voltStart);
+	strVoltEnd.Format(TEXT("%f"), m_TestConfig.arm.voltEnd);
 	m_EdtCpuFreqStart.SetWindowText(strFreqStart);
 	m_EdtCpuFreqEnd.SetWindowText(strFreqEnd);
 	m_EdtCpuFreqStep.SetWindowText(strFreqStep);
-	m_EdtVoltStart.SetWindowText(strSysVoltStart);
-	m_EdtVoltEnd.SetWindowText  (strSysVoltEnd);
+	m_EdtVoltStart.SetWindowText(strVoltStart);
+	m_EdtVoltEnd.SetWindowText(strVoltEnd);
 
-	m_EdtVoltDeviceStart.SetWindowText(strDeviceVoltStart);
-	m_EdtVoltDeviceEnd.SetWindowText  (strDeviceVoltEnd);
+	//	MM (VPU)
+	strFreqStart.Format(TEXT("%d"), m_TestConfig.mm.freqStart / 1000000);
+	strFreqEnd.Format(TEXT("%d"), m_TestConfig.mm.freqEnd / 1000000);
+	strFreqStep.Format(TEXT("%d"), m_TestConfig.mm.freqStep / 1000000);
+	strVoltStart.Format(TEXT("%f"), m_TestConfig.mm.voltStart);
+	strVoltEnd.Format(TEXT("%f"), m_TestConfig.mm.voltEnd);
+	m_EdtMMFreqStart.SetWindowText(strFreqStart);
+	m_EdtMMFreqEnd.SetWindowText(strFreqEnd);
+	m_EdtMMFreqStep.SetWindowText(strFreqStep);
+	m_EdtMMVoltStart.SetWindowText(strVoltStart);
+	m_EdtMMVoltEnd.SetWindowText(strVoltEnd);
+
+	//	USB
+	strFreqStart.Format(TEXT("%d"), m_TestConfig.usb.freqStart / 1000000);
+	strFreqEnd.Format(TEXT("%d"), m_TestConfig.usb.freqEnd / 1000000);
+	strFreqStep.Format(TEXT("%d"), m_TestConfig.usb.freqStep / 1000000);
+	strVoltStart.Format(TEXT("%f"), m_TestConfig.usb.voltStart);
+	strVoltEnd.Format(TEXT("%f"), m_TestConfig.usb.voltEnd);
+	m_EdtUsbFreqStart.SetWindowText(strFreqStart);
+	m_EdtUsbFreqEnd.SetWindowText(strFreqEnd);
+	m_EdtUsbFreqStep.SetWindowText(strFreqStep);
+	m_EdtUsbVoltStart.SetWindowText(strVoltStart);
+	m_EdtUsbVoltEnd.SetWindowText(strVoltEnd);
+
+	//	SYS
+	strFreqStart.Format(TEXT("%d"), m_TestConfig.bus.freqStart / 1000000);
+	strFreqEnd.Format(TEXT("%d"), m_TestConfig.bus.freqEnd / 1000000);
+	strFreqStep.Format(TEXT("%d"), m_TestConfig.bus.freqStep / 1000000);
+	strVoltStart.Format(TEXT("%f"), m_TestConfig.bus.voltStart);
+	strVoltEnd.Format(TEXT("%f"), m_TestConfig.bus.voltEnd);
+	m_EdtSysBusFreqStart.SetWindowText(strFreqStart);
+	m_EdtSysBusFreqEnd.SetWindowText(strFreqEnd);
+	m_EdtSysBusFreqStep.SetWindowText(strFreqStep);
+	m_EdtSysBusVoltStart.SetWindowText(strVoltStart);
+	m_EdtSysBusVoltEnd.SetWindowText(strVoltEnd);
+
+
+	//	Timeout
+	strResetTimeout.Format(TEXT("%d"), m_TestConfig.resetTimeout);
+	strTestTimeout.Format(TEXT("%d"), m_TestConfig.testTimeout);
+	m_EdtResetTimeout.SetWindowText( strResetTimeout );
+	m_EdtTestTimeout.SetWindowText( strTestTimeout );
+
 
 	CString strDefOutFileName;
 	SYSTEMTIME time;
@@ -496,18 +523,25 @@ void CASVDlg::SetControlParam()
 	m_CmbCorner.AddString(TEXT("FS"));
 	m_CmbCorner.SetCurSel(2);
 
-	CString str;
-	m_CmbCpuSingleFreq.AddString(TEXT("ALL"));
-	for( int i=0 ; (m_FreqStart + i*m_FreqStep) <= m_FreqEnd ; i++ )
-	{
-		str.Format(TEXT("%d"), (m_FreqStart + i*m_FreqStep)/1000000);
-		m_CmbCpuSingleFreq.AddString(str);
-	}
-	m_CmbCpuSingleFreq.SetCurSel(0);
-	m_CmbCpuSingleFreq.EnableWindow( FALSE );
+	//	MM AXI Bus Clock
+	m_CmbMMAxi.AddString(TEXT("333"));
+	m_CmbMMAxi.AddString(TEXT("400"));
+	m_CmbMMAxi.SetCurSel(0);	//	333
 
-	OnBnClickedChkDevice();
+	if (m_TestConfig.enableCpu)
+		m_ChkCpu.SetCheck(BST_CHECKED);
+	if (m_TestConfig.enableMM)
+		m_ChkMM.SetCheck(BST_CHECKED);
+	if (m_TestConfig.enableUSB)
+		m_ChkUsb.SetCheck(BST_CHECKED);
+	if (m_TestConfig.enableSysBus)
+		m_ChkSysBus.SetCheck(BST_CHECKED);
+
+
 	OnBnClickedChkCpu();
+	OnBnClickedChkMm();
+	OnBnClickedChkSysbus();
+	OnBnClickedChkUsb();
 }
 
 
@@ -616,22 +650,6 @@ void CASVDlg::ASVEventCallback( void *pArg, ASVT_EVT_TYPE evtCode, void *evtData
 		pObj->OnBnClickedBtnStop();
 		pObj->WriteEndDelimiter(evtData); // js.park
 
-		if( BST_CHECKED == pObj->m_ChkEnAging.GetCheck() )
-		{
-			CString strNumAging;
-			pObj->m_EdtNumAging.GetWindowText( strNumAging );
-			unsigned int numAging = _wtoi(strNumAging.GetString());
-
-			numAging--;
-
-			if( numAging > 0 )
-			{
-				EB_Printf( &pObj->m_EdtResult, TEXT("================ Agigng Mode Aging Count(%d) ================\n"), numAging );
-				strNumAging.Format(TEXT("%d"), numAging);
-				pObj->m_EdtNumAging.SetWindowText(strNumAging);
-				pObj->OnBnClickedBtnStart();
-			}
-		}
 		::sndPlaySound( TEXT("./notify.wav"), SND_SYNC );
 	}
 	else if( ASVT_EVT_ERR == evtCode )
@@ -897,7 +915,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\t%s"		//	LVCC
 				"\t%d"		//	Test Time
 				"\t%s\n",		//	Date & Time
-				m_ChipNumber,
+				m_TestConfig.chipNumber,
 				gStrCornorTable[m_CmbCorner.GetCurSel()],
 				strLotID,
 				m_ChipInfo.waferNo,
@@ -914,9 +932,9 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				m_HPM[6],
 				m_HPM[7],
 				m_cpuHPM,
-				pEvtData->cpu_hpm,
-				m_BoardNumber,
-				m_Temporature,
+				pEvtData->hpm,
+				m_TestConfig.boardNumber,
+				m_TestConfig.temporature,
 				ASVModuleIDToStringSimple( pEvtData->module ),
 				pEvtData->frequency / 1000000,
 				pEvtData->tmuStart,
@@ -959,36 +977,18 @@ void CASVDlg::WriteEndDelimiter(void *evtData)
 	}
 }
 
-
-typedef struct ASV_SAVE_CONFIG {
-	int				enableCpu;
-	int				enableDevice;
-	unsigned int	cpuFreqStart, cpuFreqEnd, cpuFreqStep;
-	double			armVoltStart, armVoltEnd, armVoltStep;
-	double			armFaultStart, armFaultEnd;
-	double			armBootUpVolt;
-	//	Device Config
-	double			deviceVoltStart;
-	double			deviceVoltEnd;
-	double			deviceVoltStep;
-	//	Timeout Config
-	int				resetTimeout;
-	int				testTimeout;
-}ASV_SAVE_CONFIG;
-
-
 //
 //	Configuration Load & Save Functions
 //
 #define	CFG_FILE_NAME	L".\\ASV_Config.dat"
 void CASVDlg::LoadConfiguration()
 {
-	DWORD readSize, writtenSize;
+	DWORD readSize;
 	HANDLE hCfgFile = CreateFile( CFG_FILE_NAME, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if( INVALID_HANDLE_VALUE != hCfgFile )
 	{
-		ASV_SAVE_CONFIG *pAllCfg = (ASV_SAVE_CONFIG *)malloc( sizeof(ASV_SAVE_CONFIG) );
-		if( !ReadFile( hCfgFile, pAllCfg, sizeof(ASV_SAVE_CONFIG), &readSize, NULL ) || readSize != sizeof(ASV_SAVE_CONFIG) )
+		ASV_TEST_CONFIG*pAllCfg = (ASV_TEST_CONFIG*)malloc( sizeof(ASV_TEST_CONFIG) );
+		if( !ReadFile( hCfgFile, pAllCfg, sizeof(ASV_TEST_CONFIG), &readSize, NULL ) || readSize != sizeof(ASV_TEST_CONFIG) )
 		{
 			//	Missmatch config size ==> Make Default Configration
 			free( pAllCfg );
@@ -999,27 +999,9 @@ void CASVDlg::LoadConfiguration()
 		}
 		CloseHandle( hCfgFile );
 
-		if( pAllCfg->enableCpu ) m_ChkCpu.SetCheck( BST_CHECKED ); else m_ChkCpu.SetCheck( BST_UNCHECKED );
-		if( pAllCfg->enableDevice) m_ChkDevice.SetCheck( BST_CHECKED ); else m_ChkDevice.SetCheck( BST_UNCHECKED );
-
 		//	CPU Test
-		m_FreqStart     = pAllCfg->cpuFreqStart ;
-		m_FreqEnd       = pAllCfg->cpuFreqEnd   ;
-		m_FreqStep      = pAllCfg->cpuFreqStep  ;
-		m_SysVoltStart  = pAllCfg->armVoltStart ;
-		m_SysVoltEnd    = pAllCfg->armVoltEnd   ;
-		m_SysVoltStep   = pAllCfg->armVoltStep  ;
-		m_ArmBootUpVolt = pAllCfg->armBootUpVolt;
-		m_ArmFaultStartVolt= pAllCfg->armFaultStart;
-		m_ArmFaultEndVolt  = pAllCfg->armFaultEnd;
-
-		//	Device Test
-		m_DeviceVoltStart	= pAllCfg->deviceVoltStart;
-		m_DeviceVoltEnd		= pAllCfg->deviceVoltEnd;
-		m_DeviceVoltStep	= pAllCfg->deviceVoltStep;
-		//	Timeouts
-		m_ResetTimeout		= pAllCfg->resetTimeout;
-		m_TestTimeout		= pAllCfg->testTimeout;
+		if( NULL != pAllCfg )
+			m_TestConfig = *pAllCfg;
 
 		free( pAllCfg );
 	}
@@ -1033,60 +1015,65 @@ void CASVDlg::LoadConfiguration()
 void CASVDlg::SaveConfiguration()
 {
 	DWORD wSize = sizeof(DWORD);
-	ASV_SAVE_CONFIG cfg;
 	HANDLE hWriteFile = CreateFile( CFG_FILE_NAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
-
-	cfg.enableCpu       = ( BST_CHECKED == m_ChkCpu.GetCheck() )? 1 : 0;
-	cfg.cpuFreqStart    = m_FreqStart    ;
-	cfg.cpuFreqEnd      = m_FreqEnd      ;
-	cfg.cpuFreqStep     = m_FreqStep     ;
-	cfg.armVoltStart    = m_SysVoltStart ;
-	cfg.armVoltEnd      = m_SysVoltEnd   ;
-	cfg.armVoltStep     = m_SysVoltStep  ;
-	cfg.armBootUpVolt   = m_ArmBootUpVolt;
-	cfg.armFaultStart   = m_ArmFaultStartVolt;
-	cfg.armFaultEnd     = m_ArmFaultEndVolt;
-
-	cfg.enableDevice	= ( BST_CHECKED == m_ChkDevice.GetCheck() )? 1 : 0;
-	cfg.deviceVoltStart = m_DeviceVoltStart;
-	cfg.deviceVoltEnd   = m_DeviceVoltEnd  ;
-	cfg.deviceVoltStep  = m_DeviceVoltStep ;
-
-	cfg.resetTimeout	= m_ResetTimeout;
-	cfg.testTimeout		= m_TestTimeout;
 
 	if( INVALID_HANDLE_VALUE != hWriteFile )
 	{
-		WriteFile( hWriteFile, &cfg, sizeof(ASV_SAVE_CONFIG), &wSize, NULL );
+		WriteFile( hWriteFile, &m_TestConfig, sizeof(ASV_TEST_CONFIG), &wSize, NULL );
 		FlushFileBuffers( hWriteFile );
 		CloseHandle( hWriteFile );
 	}
 }
 
+//
+//	TODO : 부트업 전압은 반드시 확인할 것.
+//
 void CASVDlg::SetDefaultConfiguration()
 {
+	m_TestConfig.temporature = 25;
+	m_TestConfig.boardNumber = 1;
+	m_TestConfig.chipNumber = 1;
+
 	//	CPU Test
 	m_ChkCpu.SetCheck(BST_CHECKED);
-	m_FreqStart		= 100000000;
-	m_FreqEnd		= 1000000000;
-	m_FreqStep		= 100000000;
-	m_SysVoltStart  = 0.80;
-	m_SysVoltEnd    = 1.45;
-	m_SysVoltStep   = 0.0125;
-	m_ArmBootUpVolt = 1.0000;
-	m_ArmFaultStartVolt = 1.0;
-	m_ArmFaultEndVolt   = 1.1;
+	m_TestConfig.enableCpu		= 1;
+	m_TestConfig.arm.freqStart	= 100000000;
+	m_TestConfig.arm.freqEnd	= 1000000000;
+	m_TestConfig.arm.freqStep	= 100000000;
+	m_TestConfig.arm.voltStart	= 0.8000;
+	m_TestConfig.arm.voltEnd	= 1.450;
+	m_TestConfig.arm.voltTypical= 1.000;		//	Typical Voltage
 
-	//	Device Test
-	m_ChkDevice.SetCheck(BST_CHECKED);
-	m_DeviceVoltStart = 0.8;
-	m_DeviceVoltEnd   = 1.2;
-	m_DeviceVoltStep  = 0.0125;
+	m_ChkMM.SetCheck(BST_UNCHECKED);
+	m_TestConfig.enableMM		= 0;
+	m_TestConfig.mm.freqStart	= 100000000;
+	m_TestConfig.mm.freqEnd		= 500000000;
+	m_TestConfig.mm.freqStep	= 50000000;
+	m_TestConfig.mm.voltStart	= 0.8000;
+	m_TestConfig.mm.voltEnd		= 1.450;
+	m_TestConfig.mm.voltTypical = 1.000;		//	Typical Voltage
+
+	m_ChkUsb.SetCheck(BST_UNCHECKED);
+	m_TestConfig.enableUSB		= 0;
+	m_TestConfig.usb.freqStart	= 100000000;
+	m_TestConfig.usb.freqEnd	= 500000000;
+	m_TestConfig.usb.freqStep	= 50000000;
+	m_TestConfig.usb.voltStart	= 0.8000;
+	m_TestConfig.usb.voltEnd	= 1.450;
+	m_TestConfig.usb.voltTypical= 1.000;		//	Typical Voltage
+
+	m_ChkSysBus.SetCheck(BST_UNCHECKED);
+	m_TestConfig.enableSysBus	= 0;
+	m_TestConfig.bus.freqStart	= 100000000;
+	m_TestConfig.bus.freqEnd	= 500000000;
+	m_TestConfig.bus.freqStep	= 50000000;
+	m_TestConfig.bus.voltStart	= 0.8000;
+	m_TestConfig.bus.voltEnd	= 1.450;
+	m_TestConfig.bus.voltTypical= 1.000;		//	Typical Voltage
 
 	//	ResetTimeout
-	m_ResetTimeout	= 15;
-	m_TestTimeout	= 15;
-
+	m_TestConfig.resetTimeout = 15;
+	m_TestConfig.testTimeout  = 15;
 }
 
 
@@ -1100,34 +1087,23 @@ void CASVDlg::OnBnClickedChkChipInfoMode()
 	{
 		//	CPU Test
 		m_ChkCpu.EnableWindow(FALSE);
-		m_CmbCpuSingleFreq.EnableWindow(FALSE);
 		m_EdtCpuFreqStart.EnableWindow(FALSE);
 		m_EdtCpuFreqEnd.EnableWindow(FALSE);
 		m_EdtCpuFreqStep.EnableWindow(FALSE);
 		m_EdtVoltStart.EnableWindow(FALSE);
 		m_EdtVoltEnd.EnableWindow(FALSE);
 		m_ChipInfoMode = true;
-
-		m_ChkDevice.EnableWindow(FALSE);
-		m_EdtVoltDeviceStart.EnableWindow(FALSE);
-		m_EdtVoltDeviceEnd.EnableWindow(FALSE);
 	}
 	else
 	{
 		//	CPU Test
 		m_ChkCpu.EnableWindow(TRUE);
-		m_CmbCpuSingleFreq.EnableWindow(TRUE);
 		m_EdtCpuFreqStart.EnableWindow(TRUE);
 		m_EdtCpuFreqEnd.EnableWindow(TRUE);
 		m_EdtCpuFreqStep.EnableWindow(TRUE);
 		m_EdtVoltStart.EnableWindow(TRUE);
 		m_EdtVoltEnd.EnableWindow(TRUE);
 		m_ChipInfoMode = false;
-
-		//	Device Test
-		m_ChkDevice.EnableWindow(TRUE);
-		m_EdtVoltDeviceStart.EnableWindow(TRUE);
-		m_EdtVoltDeviceEnd.EnableWindow(TRUE);
 	}
 }
 
@@ -1152,21 +1128,69 @@ void CASVDlg::OnBnClickedChkCpu()
 	}
 }
 
-void CASVDlg::OnBnClickedChkDevice()
+void CASVDlg::OnBnClickedChkMm()
 {
-	if( BST_CHECKED == m_ChkDevice.GetCheck() )
+	if (BST_CHECKED == m_ChkMM.GetCheck())
 	{
-		m_CmbDeviceFreq.EnableWindow( TRUE );
-		m_EdtVoltDeviceStart.EnableWindow( TRUE );
-		m_EdtVoltDeviceEnd.EnableWindow( TRUE );
+		m_EdtMMFreqStart.EnableWindow(TRUE);
+		m_EdtMMFreqEnd.EnableWindow(TRUE);
+		m_EdtMMFreqStep.EnableWindow(TRUE);
+		m_EdtMMVoltStart.EnableWindow(TRUE);
+		m_EdtMMVoltEnd.EnableWindow(TRUE);
+		m_CmbMMAxi.EnableWindow(TRUE);
 	}
 	else
 	{
-		m_CmbDeviceFreq.EnableWindow( FALSE );
-		m_EdtVoltDeviceStart.EnableWindow( FALSE );
-		m_EdtVoltDeviceEnd.EnableWindow( FALSE );
+		m_EdtMMFreqStart.EnableWindow(FALSE);
+		m_EdtMMFreqEnd.EnableWindow(FALSE);
+		m_EdtMMFreqStep.EnableWindow(FALSE);
+		m_EdtMMVoltStart.EnableWindow(FALSE);
+		m_EdtMMVoltEnd.EnableWindow(FALSE);
+		m_CmbMMAxi.EnableWindow(FALSE);
 	}
 }
+
+void CASVDlg::OnBnClickedChkUsb()
+{
+	if (BST_CHECKED == m_ChkUsb.GetCheck())
+	{
+		m_EdtUsbFreqStart.EnableWindow(TRUE);
+		m_EdtUsbFreqEnd.EnableWindow(TRUE);
+		m_EdtUsbFreqStep.EnableWindow(TRUE);
+		m_EdtUsbVoltStart.EnableWindow(TRUE);
+		m_EdtUsbVoltEnd.EnableWindow(TRUE);
+	}
+	else
+	{
+		m_EdtUsbFreqStart.EnableWindow(FALSE);
+		m_EdtUsbFreqEnd.EnableWindow(FALSE);
+		m_EdtUsbFreqStep.EnableWindow(FALSE);
+		m_EdtUsbVoltStart.EnableWindow(FALSE);
+		m_EdtUsbVoltEnd.EnableWindow(FALSE);
+	}
+}
+
+
+void CASVDlg::OnBnClickedChkSysbus()
+{
+	if (BST_CHECKED == m_ChkSysBus.GetCheck())
+	{
+		m_EdtSysBusFreqStart.EnableWindow(TRUE);
+		m_EdtSysBusFreqEnd.EnableWindow(TRUE);
+		m_EdtSysBusFreqStep.EnableWindow(TRUE);
+		m_EdtSysBusVoltStart.EnableWindow(TRUE);
+		m_EdtSysBusVoltEnd.EnableWindow(TRUE);
+	}
+	else
+	{
+		m_EdtSysBusFreqStart.EnableWindow(FALSE);
+		m_EdtSysBusFreqEnd.EnableWindow(FALSE);
+		m_EdtSysBusFreqStep.EnableWindow(FALSE);
+		m_EdtSysBusVoltStart.EnableWindow(FALSE);
+		m_EdtSysBusVoltEnd.EnableWindow(FALSE);
+	}
+}
+
 
 void CASVDlg::OnBnClickedBtnSaveConfig()
 {

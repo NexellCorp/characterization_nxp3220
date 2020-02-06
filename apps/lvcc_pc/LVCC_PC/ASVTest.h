@@ -12,6 +12,8 @@ extern const unsigned int g3DFreqTable[NUM_3D_FREQ_TABLE];
 
 #define	MAX_FREQ_TABLE		64
 
+#define ENABLE_CMD_TEST		0
+
 typedef enum {
 	ASVT_EVT_ERR = -1,
 	ASVT_EVT_DONE = 0,
@@ -28,36 +30,47 @@ typedef struct {
 } ASVT_REPORT_TYPE;
 
 typedef struct {
-	//	CPU Config
-	int				enableCpu;
 	unsigned int	freqStart;
 	unsigned int	freqEnd;
 	unsigned int	freqStep;
-	float			armBootUp;
-	float			armVoltStart;
-	float			armVoltEnd;
-	float			armVoltStep;
-	float			armFaultStart;
-	float			armFaultEnd;
+	unsigned int	freqOther;
+	double			voltStart;
+	double			voltEnd;
+	double			voltTypical;
+} ASV_COMMON_PARAM;
 
-	//	Device Config
-	int				enableDevice;
-	float			deviceTypical;
-	float			deviceVoltStart;
-	float			deviceVoltEnd;
-	float			deviceVoltStep;
-	int				numDeviceFreq;
-	unsigned int	deviceFreqTable[MAX_FREQ_TABLE];
+typedef struct {
+	//	General Config
+	int					temporature;
+	int					boardNumber;
+	int					chipNumber;
 
-	int				resetTimeout;
-	int				testTimeout;
+	//	CPU Config
+	int					enableCpu;
+	ASV_COMMON_PARAM	arm;
+
+	//	MM Block Confing
+	int					enableMM;
+	unsigned int		mmAxiFreq;
+	ASV_COMMON_PARAM	mm;
+
+	//	USB Block Config
+	int					enableUSB;
+	ASV_COMMON_PARAM	usb;
+
+	//	System Bus Config
+	int					enableSysBus;
+	ASV_COMMON_PARAM	bus;
+
+	int					resetTimeout;
+	int					testTimeout;
 } ASV_TEST_CONFIG;
 
 typedef struct {
 	ASV_MODULE_ID	module;
 	unsigned int	frequency;
-	unsigned int	cpu_hpm;
-	float			lvcc;			//	volt
+	unsigned int	hpm;
+	double			lvcc;			//	volt
 	int				time;			//	processing time in milli second
 	int				tmuStart;
 	int				tmuEnd;
@@ -119,15 +132,16 @@ private:
 		((CASVTest *)pArg)->FindLVCCThread();
 	}
 	void FindLVCCThread();
-	float FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int tmu[2] );
+	double FastTestLoop( ASV_MODULE_ID module, ASV_COMMON_PARAM *param, unsigned int frequency, int tmu[2] );
 	//
-	bool	SetFrequency( ASV_MODULE_ID module, unsigned int frequency );
-	bool	SetVoltage( ASV_MODULE_ID module, float voltage );
+	bool	SetFrequency(ASV_MODULE_ID module, unsigned int frequency);
+	bool	SetMMAxiFrequency( ASV_MODULE_ID module, unsigned int frequency );
+	bool	SetVoltage( ASV_MODULE_ID module, double voltage );
 	bool	StartTest( ASV_MODULE_ID module, int retryCnt = 1 );
-	float	SelectNextVoltage( float min, float current, float step );
+	double	SelectNextVoltage( double min, double current, double step );
 
 
-	bool	TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned int typical, float volt );
+	bool	TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned int typical, double volt );
 
 	//	TMU Read Functions
 	bool	GetTMUResponse( int *pTMU );
@@ -141,7 +155,7 @@ private:
 	bool	GetHPM(unsigned int RO[8]);
 	bool	GetHPMResponse(unsigned int RO[8]);
 
-	bool	GetRUNCPUHPM(unsigned int *hpm);
+	bool	GetCpuHPM(unsigned int *hpm);
 	bool	GetHPMRUNCPUResponse(unsigned int *hpm);
 
 	static void RxComRxCallbackStub( void *pArg, char *buf, int len )
@@ -155,6 +169,10 @@ private:
 	bool HardwareReset();
 	bool WaitBootOnMessage();
 
+
+	//	Test Mode Functions
+	void TestCommand();
+
 private:
 	bool			m_bConfig;
 	CComPort		*m_pCom;
@@ -163,8 +181,8 @@ private:
 
 	ASV_MODULE_ID	m_TestModuleId;
 	uint32_t		m_Frequency;
-	float			m_MinVolt;
-	float			m_MaxVolt;
+	double			m_MinVolt;
+	double			m_MaxVolt;
 	uint32_t		m_Timeout;
 
 	ASV_TEST_CONFIG	m_LastConfig;
