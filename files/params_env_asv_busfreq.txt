@@ -7,5 +7,5 @@ mmc_boot_part_type=ext4
 mmc_rootfs_part=3
 mmc_rootfs_part_type=ext4
 root_rw=rw
-log_msg=loglevel=7 printk.time=1
+log_msg=loglevel=7 printk.time=1 quiet
 bootcmd=ext4load mmc 0 44000000 zImage;ext4load mmc 0 46000000 nxp3220-vtk-asv-devfs.dtb;run load_args;bootz 44000000 - 46000000
