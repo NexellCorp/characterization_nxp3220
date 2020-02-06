@@ -12,6 +12,7 @@
 
 #define NUM_DEVICE_FREQ_TABLE	3
 
+
 const unsigned int gDeviceFreqTable[NUM_DEVICE_FREQ_TABLE] =
 {
 	100000000,
@@ -41,8 +42,7 @@ static double SM5011_VTable[] = {
 	1.3000, 1.3125, 1.3250, 1.3375, 1.3500, 1.3625, 1.3750, 1.3875,
 	1.4000, 1.4125, 1.4250, 1.4375, 1.4500, 1.4625, 1.4750, 1.4875,
 };
-static const int SM5011_MAX_VTABLE = 64 + 8;
-
+static const int SM5011_MAX_VTABLE = 72;
 
 static double MP8845_VTable[] = 
 {
@@ -67,12 +67,34 @@ static const int MP8848_MAX_VTABLE = 128;
 
 
 
-#define	MIN_VOLTAGE_STEP		(0.0125)
-#define TYPICAL_CPU_VOLTAGE		(1.00000)
-#define ALL_CPU_WORKING_VOLTAGE	(1.40000)
+//
+//	H/W TYPICAL Block Inforamtions
+//
 #define TYPICAL_CPU_FREQ		(800000000)
-#define TYPICAL_DEVICE_FREQ		(333000000)
+#define TYPICAL_CPU_VOLTAGE		(1.00000)
+
+#define TYPICAL_MM_FREQ			(333333334)
+#define TYPICAL_MM_VOLTAGE		(1.00000)
+
+#define TYPICAL_USB_FREQ		(333333334)
+#define TYPICAL_USB_VOLTAGE		(1.00000)
+
+#define TYPICAL_SYS_FREQ		(333333334)
+#define TYPICAL_SYS_VOLTAGE		(1.00000)
+
+//
+//	PMIC Information
+//
 #define PMIC_TYPE				PMIC_SM5011
+#define PMCI_SM5001_STEP		(0.0125)
+
+
+#define	MIN_VOLTAGE_STEP		PMCI_SM5001_STEP
+
+
+#define ALL_CPU_WORKING_VOLTAGE		(1.40000)
+#define ALL_MM_WORKING_VOLTAGE		(1.40000)
+#define ALL_DEVICE_WORKING_VOLTAGE	(1.40000)
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -169,10 +191,10 @@ void CASVTest::SetTestConfig( ASV_TEST_CONFIG *config, CComPort *pCom )
 	if( pCom )
 	{
 		m_pCom = pCom;
-		m_bConfig = true;
 		if( m_pCom )
 			m_pCom->SetRxCallback(this, CASVTest::RxComRxCallbackStub );
 	}
+	m_bConfig = true;
 }
 
 bool CASVTest::Start( bool bChipIdMode )
@@ -209,7 +231,7 @@ bool CASVTest::Scan()
 	unsigned int ecid[4];
 	unsigned int hpm = 0;
 
-	if( GetECID(ecid) && GetIDS(ids_hpm) && GetHPM(&ids_hpm[2]) && GetRUNCPUHPM(&hpm) )
+	if( GetECID(ecid) && GetIDS(ids_hpm) && GetHPM(&ids_hpm[2]) && GetCpuHPM(&hpm) )
 	{
 		m_cbEventFunc( m_pcbArg, ASVT_EVT_ECID, ecid );
 		m_cbEventFunc( m_pcbArg, ASVT_EVT_IDS_HPM, ids_hpm );
@@ -231,7 +253,7 @@ bool CASVTest::Scan()
 #endif
 }
 
-bool CASVTest::TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned int typical, float volt )
+bool CASVTest::TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned int typical, double volt )
 {
 	DbgLogPrint(1, "\n[%s] Lowest Voltage %fv, freq = %dHz, typical = %dHz (lowest).\n", ASVModuleIDToString(module), volt, freq, typical );
 	//	높은 주파수로 가야 하기 때문에 전압부터 변경
@@ -302,28 +324,40 @@ bool CASVTest::TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned
 
 
 // Version 1.0.4 : 0.1 Volt씩 증가하면서 찾는 알고리즘
-float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int tmu[2] )
+double CASVTest::FastTestLoop( ASV_MODULE_ID module, ASV_COMMON_PARAM *param, unsigned int frequency, int tmu[2] )
 {
-	double lowVolt, highVolt, curVolt, bootup, lvcc = -1, testVolt;
+	double lowVolt, highVolt, curVolt, bootup, lvcc = -1, hightestVolt, allWorkingVolt;
 	int tryCount = 0;
 	bool lastSuccess = false;
-	float prevVolt;
 	unsigned int typicalFreq;
 
-	DbgLogPrint(1, "================ Start %s %dMHz LVCC =====================\n", ASVModuleIDToStringSimple(module), frequency/1000000);
-	if( module == ASVM_CPU )
+	DbgLogPrint(1, "================ Start %s %dMHz LVCC =====================\n", ASVModuleIDToString(module), frequency/1000000);
+
+	bootup = param->voltTypical;
+	lowVolt = param->voltStart;
+	highVolt = param->voltEnd;
+	hightestVolt = param->voltEnd;
+
+	switch ( module )
 	{
-		bootup  = m_TestConfig.armBootUp;
-		lowVolt  = m_TestConfig.armVoltStart;
-		highVolt = m_TestConfig.armVoltEnd;
+	case ASVM_CPU:
 		typicalFreq = TYPICAL_CPU_FREQ;
-	}
-	else
-	{
-		bootup   = m_TestConfig.deviceTypical;
-		lowVolt  = m_TestConfig.deviceVoltStart;
-		highVolt = m_TestConfig.deviceVoltEnd;
-		typicalFreq = TYPICAL_DEVICE_FREQ;
+		allWorkingVolt = ALL_CPU_WORKING_VOLTAGE;
+		break;
+	case ASVM_MM:
+		typicalFreq = TYPICAL_MM_FREQ;
+		allWorkingVolt = ALL_MM_WORKING_VOLTAGE;
+		break;
+	case ASVM_USB:
+		typicalFreq = TYPICAL_USB_FREQ;
+		allWorkingVolt = ALL_DEVICE_WORKING_VOLTAGE;
+		break;
+	case ASVM_SYS:
+		typicalFreq = TYPICAL_SYS_FREQ;
+		allWorkingVolt = ALL_DEVICE_WORKING_VOLTAGE;
+		break;
+	default:
+		break;
 	}
 
 	//	최소 voltage test를 통해서 전원 설정이 정상인지 확인을 한다.
@@ -342,6 +376,14 @@ float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int 
 			return lvcc;
 
 		DbgLogPrint(1, "<< Try : %dHz, %fVolt >>\n", frequency, curVolt);
+
+		//	for NXP3220 MM Block Test
+		if ( ASVM_MM == module )
+		{
+			//	ignore this command's return value
+			SetMMAxiFrequency(module, param->freqOther);
+		}
+
 		if( frequency > typicalFreq )
 		{
 			if( !SetVoltage(module, curVolt) || !SetFrequency(module, frequency) || !StartTest( module, RETRY_COUNT ) )
@@ -387,6 +429,13 @@ float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int 
 		if( m_bThreadExit )
 			return lvcc;
 
+		//	for NXP3220 MM Block Test
+		if (ASVM_MM == module)
+		{
+			//	ignore this command's return value
+			SetMMAxiFrequency(module, param->freqOther);
+		}
+
 		if( frequency > typicalFreq )
 		{
 			if( !SetVoltage(module, curVolt) || !SetFrequency(module, frequency) || !StartTest( module, RETRY_COUNT ) )
@@ -423,28 +472,34 @@ float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int 
 		}
 	}
 
+	//
+	//	이전에 찾아졌던 LVCC에서 Voltage Step 만큼 낮춘 후 다시 Test 
+	//	진행성 테스트로 인한 발열로 인하여 LVCC가 높게 나오는 경우에 대한 대비책
+	//
 	lvcc = FindNearlestVoltage( lvcc - MIN_VOLTAGE_STEP );
 	if( lvcc > 0 )
 	{
 		DbgLogPrint( 1, "\nFound LVCC = %f, Check LVCC Validity\n", lvcc);
 		while( !m_bThreadExit )
 		{
-			if( frequency > TYPICAL_CPU_FREQ )
+			if( frequency > typicalFreq )
 			{
-				SetVoltage( module, ALL_CPU_WORKING_VOLTAGE );
+				SetVoltage( module, allWorkingVolt);
 			}
 			GetTMUInformation( &tmu[0], NULL );
+
+			//	for NXP3220 MM Block Test
+			if (ASVM_MM == module)
+			{
+				//	ignore this command's return value
+				SetMMAxiFrequency(module, param->freqOther);
+			}
+
 			if( !SetFrequency( module, frequency ) || !SetVoltage( module, lvcc ) || !StartTest( module, LVCC_RETRY_COUNT ) )
 			{
 				DbgLogPrint( 1, "LVCC Validity Failed(lvcc=%fvolt), Try next voltage(%fvolt)\n", lvcc, FindNearlestVoltage(lvcc+MIN_VOLTAGE_STEP));
 				HardwareReset();
-				if( module == ASVM_CPU && lvcc >= m_TestConfig.armVoltEnd )
-				{
-					DbgLogPrint( 1, "===> Validation Failed !!! Exit Loop!!\n");
-					lvcc = -1;
-					break;
-				}
-				if( ((module==ASVM_VPU)||(module==ASVM_3D)) && lvcc >= m_TestConfig.deviceVoltEnd )
+				if( lvcc >= hightestVolt )
 				{
 					DbgLogPrint( 1, "===> Validation Failed !!! Exit Loop!!\n");
 					lvcc = -1;
@@ -459,7 +514,6 @@ float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int 
 			}
 		}
 	}
-
 	DbgLogPrint(1, "================ End %s %dMHz LVCC(%f) =====================\n", ASVModuleIDToStringSimple(module), frequency/1000000, lvcc);
 	return lvcc;
 }
@@ -468,14 +522,17 @@ float CASVTest::FastTestLoop( ASV_MODULE_ID module, unsigned int frequency, int 
 void CASVTest::FindLVCCThread()
 {
 	int freqIndex = 0;
-	float lvcc = -1;
+	double lvcc = -1;
 	int tmu[2];
 	unsigned int hpm;
 	ASV_EVT_DATA evtData;
 	DWORD startTick, endTick;
+	unsigned int frequency;
 
-	//	CPU Test
-	unsigned int frequency = m_TestConfig.freqEnd;
+#if ENABLE_CMD_TEST
+	TestCommand();
+#endif
+
 
 	if( !Scan() )
 	{
@@ -493,62 +550,94 @@ void CASVTest::FindLVCCThread()
 		return ;
 	}
 
-
 	if( m_bChipIdMode )
 		return;
 
 	//	CPU Loop
+	frequency = m_TestConfig.arm.freqEnd;
 	if( m_TestConfig.enableCpu )
 	{
 		DbgLogPrint(1, "---------- Start CPU LVCC ----------\n");
-		while( !m_bThreadExit && (frequency >= m_TestConfig.freqStart) )
+		while( !m_bThreadExit && (frequency >= m_TestConfig.arm.freqStart) )
 		{
 			startTick = GetTickCount();
 			HardwareReset();
-			lvcc = FastTestLoop( ASVM_CPU, frequency, tmu );
-			GetRUNCPUHPM(&hpm);
+			lvcc = FastTestLoop( ASVM_CPU, &m_TestConfig.arm, frequency, tmu );
+			GetCpuHPM(&hpm);
 			//	Find TMU Data
 			endTick = GetTickCount();
 			if( m_cbEventFunc )
 			{
 				evtData.module = ASVM_CPU;
 				evtData.frequency = frequency;
-				evtData.cpu_hpm =  hpm;
+				evtData.hpm =  hpm;
 				evtData.lvcc = lvcc;
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
 				evtData.tmuEnd= tmu[1];
 				m_cbEventFunc( m_pcbArg, ASVT_EVT_REPORT_RESULT, &evtData );
 			}
-			frequency -= m_TestConfig.freqStep;
+			frequency -= m_TestConfig.arm.freqStep;
 		}
 		DbgLogPrint(1, "---------- End CPU LVCC ----------\n");
 	}
 
 	//	Device Loop
-
-	if( m_TestConfig.enableDevice )
+	frequency = m_TestConfig.mm.freqEnd;
+	if (m_TestConfig.enableMM)
 	{
-		DbgLogPrint(1, "---------- Start Device LVCC ----------\n");
-		for( int i=0 ; i<NUM_DEVICE_FREQ_TABLE && !m_bThreadExit ; i++ )
+		DbgLogPrint(1, "---------- Start MM Block LVCC ----------\n");
+		while (!m_bThreadExit && (frequency >= m_TestConfig.mm.freqStart))
 		{
 			startTick = GetTickCount();
 			HardwareReset();
-			lvcc = FastTestLoop( ASVM_DEVICE, gDeviceFreqTable[i], tmu );
+			lvcc = FastTestLoop(ASVM_MM, &m_TestConfig.mm, frequency, tmu);
+			GetCpuHPM(&hpm);
 			endTick = GetTickCount();
-			if( m_cbEventFunc )
+			if (m_cbEventFunc)
 			{
-				evtData.module = ASVM_DEVICE;
-				evtData.frequency = gDeviceFreqTable[i];
+				evtData.module = ASVM_MM;
+				evtData.frequency = frequency;
+				evtData.hpm = hpm;
 				evtData.lvcc = lvcc;
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
-				evtData.tmuEnd= tmu[1];
-				m_cbEventFunc( m_pcbArg, ASVT_EVT_REPORT_RESULT, &evtData );
+				evtData.tmuEnd = tmu[1];
+				m_cbEventFunc(m_pcbArg, ASVT_EVT_REPORT_RESULT, &evtData);
 			}
+			frequency -= m_TestConfig.mm.freqStep;
 		}
-		DbgLogPrint(1, "---------- End Device LVCC ----------\n");
+		DbgLogPrint(1, "---------- End MM Block LVCC ----------\n");
 	}
+
+	//	System Bus Loop
+	frequency = m_TestConfig.bus.freqEnd;
+	if (m_TestConfig.enableSysBus)
+	{
+		DbgLogPrint(1, "---------- Start System Bus Block LVCC ----------\n");
+		while (!m_bThreadExit && (frequency >= m_TestConfig.bus.freqStart))
+		{
+			startTick = GetTickCount();
+			HardwareReset();
+			lvcc = FastTestLoop(ASVM_SYS, &m_TestConfig.bus, frequency, tmu);
+			GetCpuHPM(&hpm);
+			endTick = GetTickCount();
+			if (m_cbEventFunc)
+			{
+				evtData.module = ASVM_SYS;
+				evtData.frequency = frequency;
+				evtData.hpm = hpm;
+				evtData.lvcc = lvcc;
+				evtData.time = endTick - startTick;
+				evtData.tmuStart = tmu[0];
+				evtData.tmuEnd = tmu[1];
+				m_cbEventFunc(m_pcbArg, ASVT_EVT_REPORT_RESULT, &evtData);
+			}
+			frequency -= m_TestConfig.bus.freqStep;
+		}
+		DbgLogPrint(1, "---------- End MM Block LVCC ----------\n");
+	}
+
 
 	if( m_cbEventFunc )
 		m_cbEventFunc( m_pcbArg, ASVT_EVT_DONE, &evtData );
@@ -793,13 +882,33 @@ bool CASVTest::SetFrequency( ASV_MODULE_ID module, unsigned int frequency )
 	return CheckCommandResponse();
 }
 
-bool CASVTest::SetVoltage( ASV_MODULE_ID module, float voltage )
+bool CASVTest::SetMMAxiFrequency(ASV_MODULE_ID module, unsigned int frequency)
+{
+	char cmdBuf[MAX_CMD_STR];
+	//	Set Target Voltage
+	ASV_PARAM param;
+	param.u32 = frequency;
+	memset(cmdBuf, 0, sizeof(cmdBuf));
+	MakeCommandString(cmdBuf, sizeof(cmdBuf), ASVC_SET_AXI_FREQ, module, param);
+	DbgLogPrint(1, "cmd > : %s\n", cmdBuf);
+
+	//	Send Command
+	if (m_pCom)
+	{
+		DbgLogPrint(1, "Set MM AXI Frequency (%dMHz)\n", frequency / 1000000);
+		m_pCom->WriteData(cmdBuf, strlen(cmdBuf));
+	}
+
+	return CheckCommandResponse();
+}
+
+bool CASVTest::SetVoltage( ASV_MODULE_ID module, double voltage )
 {
 	char cmdBuf[MAX_CMD_STR];
 	//	Set Target Voltage
 	ASV_PARAM param;
 	bool ret;
-	param.f32 = voltage;
+	param.f64 = voltage;
 	memset( cmdBuf, 0, sizeof(cmdBuf) );
 	MakeCommandString( cmdBuf, sizeof(cmdBuf), ASVC_SET_VOLT, module, param );
 
@@ -811,7 +920,7 @@ bool CASVTest::SetVoltage( ASV_MODULE_ID module, float voltage )
 	}
 	ret = CheckCommandResponse();
 
-	Sleep( 100 );
+	Sleep( 3000 );
 	return ret;
 }
 
@@ -845,7 +954,7 @@ bool CASVTest::StartTest( ASV_MODULE_ID module, int retryCnt )
 //
 //	Low / High
 //
-float CASVTest::SelectNextVoltage( float low, float high, float step )
+double CASVTest::SelectNextVoltage( double low, double high, double step )
 {
 	int numStep;
 
@@ -1152,7 +1261,7 @@ bool CASVTest::GetHPMResponse( unsigned int hpm[8] )
 	return true;
 }
 
-bool CASVTest::GetRUNCPUHPM(unsigned int *hpm)
+bool CASVTest::GetCpuHPM(unsigned int *hpm)
 {
 	char cmdBuf[MAX_CMD_STR];
 	memset( cmdBuf, 0, sizeof(cmdBuf) );
@@ -1214,3 +1323,15 @@ bool CASVTest::GetHPMRUNCPUResponse(unsigned int *hpm)
 	return true;
 }
 
+
+
+void CASVTest::TestCommand()
+{
+	double lvcc = -1;
+	int tmu[2];
+	unsigned int frequency;
+	frequency = m_TestConfig.mm.freqEnd;
+	lvcc = FastTestLoop(ASVM_MM, &m_TestConfig.mm, frequency, tmu);
+	MessageBox(NULL, TEXT("TestMode"), TEXT("Test Mode Ended : exit program!!!"), MB_OK);
+	exit(1);
+}

@@ -11,31 +11,34 @@ static const char *gStrAsvCmdStr[] = {
 	"ASVC_GET_ECID",
 	"ASVC_RUN",
 	"ASVC_STATUS",
-	"ASVC_GET_TMU0",	//	Get TMU 0
-	"ASVC_GET_TMU1",	//	Get TMU 1
-	"ASVC_ON",			//	PC Application Only
-	"ASVC_OFF",			//	PC Application Only
-	"ASVC_GET_IDS",		//	Get IDS
-	"ASVC_GET_HPM",		//	Get HPM
-	"ASVC_GET_CPUHPM",	//	Get CPUHPM
+	"ASVC_GET_TMU0",		//	Get TMU 0
+	"ASVC_GET_TMU1",		//	Get TMU 1
+	"ASVC_ON",				//	PC Application Only
+	"ASVC_OFF",				//	PC Application Only
+	"ASVC_GET_IDS",			//	Get IDS
+	"ASVC_GET_HPM",			//	Get HPM RO
+	"ASVC_GET_CPUHPM",		//	Get BOOT CPUHPM RO
+	"ASVC_GET_CORE_HPM",	//	Get Core HPM
+	"ASVC_SET_AXI_FREQ",	//	Set AXI Frequency : 
+							//		It was orignally created to set AXI bus freqeuncy for NXP3220's MM Block.
 	"ASVC_MAX",
 };
 
 static const char *gStrAsvModuleIdStr[] = {
 	"ASVM_CPU",
-	"ASVM_VPU",
-	"ASVM_3D",
-	"ASVM_LDO_SYS",
-	"ASVM_DEVICE" ,
+	"ASVM_MM",
+	"ASVM_USB"
+	"ASVM_HSIF"
+	"ASVM_SYS",
 	"ASVM_MAX",
 };
 
 static const char *gStrAsvModuleIdStrSimple[] = {
 	"CPU",
-	"VPU",
-	"3D",
+	"MM",
+	"USB",
+	"HSIF",
 	"SYS",
-	"DEV",
 	"MAX",
 };
 
@@ -109,7 +112,7 @@ ASV_RESULT MakeCommandString( char *outBuf, int32_t outSize, ASV_COMMAND cmd, AS
 	strcat(outBuf, " ");			//	Add Space
 	strcat(outBuf, idStr);
 
-	if( ASVC_SET_FREQ == cmd )
+	if( ASVC_SET_FREQ == cmd || ASVC_SET_AXI_FREQ == cmd )
 	{
 		strcat(outBuf, " ");			//	Add Space
 		sprintf( paramStr, "%d", param.u32 );
@@ -118,13 +121,33 @@ ASV_RESULT MakeCommandString( char *outBuf, int32_t outSize, ASV_COMMAND cmd, AS
 	else if( ASVC_SET_VOLT == cmd )
 	{
 		strcat(outBuf, " ");			//	Add Space
-		sprintf( paramStr, "%f", param.f32 );
+		sprintf( paramStr, "%f", param.f64 );
 		strcat(outBuf, paramStr);
 	}
 	outBuf[strlen(outBuf)] = '\n';
 	return ASV_RES_OK;
 }
+double NXatof(char *str)
+{
+	int len = 0, n=0, i=0;
+	float f=1.0, val=0.0;
 
+	while(str[len])len++;
+
+	if(!len)return 0;
+
+	while(i<len && str[i]!='.')
+		n=10*n + (str[i++]-'0');
+
+	if(i==len) return n;
+	i++;
+	while(i<len)
+	{
+		f*=0.1;
+		val += f*(str[i++]-'0');
+	}
+	return (val+n);
+}
 
 //
 ASV_RESULT ParseStringToCommand( char *inBuf, int32_t intSize, ASV_COMMAND *cmd, ASV_MODULE_ID *id, ASV_PARAM *param )
@@ -133,9 +156,9 @@ ASV_RESULT ParseStringToCommand( char *inBuf, int32_t intSize, ASV_COMMAND *cmd,
 	ASV_MODULE_ID moduleId;
 	char cmds[MAX_CMD_ARG][MAX_CMD_STR];
 	int32_t cmdCnt;
-	
+
 	memset(cmds, 0, sizeof(cmds));
-	
+
 	cmdCnt = GetArgument( inBuf, cmds );
 
 	if( cmdCnt < 2 )
@@ -156,25 +179,33 @@ ASV_RESULT ParseStringToCommand( char *inBuf, int32_t intSize, ASV_COMMAND *cmd,
 
 	switch( asvCmd )
 	{
-		case ASVC_SET_FREQ:
-			param->u32 = atoi(cmds[2]);
-			break;
-		case ASVC_SET_VOLT:
+	case ASVC_SET_FREQ:
+		param->u32 = atoi(cmds[2]);
+		break;
+	case ASVC_SET_VOLT:
 #ifdef WIN32
-			_atoflt((_CRT_FLOAT*)&param->f32, cmds[2]);
+		_atodbl((_CRT_DOUBLE*)&param->f64, cmds[2]);
 #else
-			param->f32 = strtof( cmds[2], NULL );
+#ifdef LINUX_APP
+		param->f64 = strtof( cmds[2], NULL );
+#else
+		param->f64 = NXatof( cmds[2] );
 #endif
+#endif
+		break;
+	case ASVC_GET_ECID:
+	case ASVC_GET_IDS:
+	case ASVC_GET_HPM:
+	case ASVC_GET_CPUHPM:
+	case ASVC_GET_CORE_HPM:
+	case ASVC_SET_AXI_FREQ: 
+	case ASVC_GET_TMU0:		//	Get TMU 0
+	case ASVC_GET_TMU1:		//	Get TMU 1
 			break;
-		case ASVC_GET_ECID:
-			break;
-		case ASVC_GET_TMU0:		//	Get TMU 0
-		case ASVC_GET_TMU1:		//	Get TMU 1
-			break;
-		case ASVC_RUN:
-			break;
-		default:
-			return ASV_RES_ERR;
+	case ASVC_RUN:
+		break;
+	default:
+		return ASV_RES_ERR;
 	}
 	*cmd = asvCmd;
 	*id = moduleId;
@@ -191,7 +222,7 @@ int32_t GetArgument( char *pSrc, char arg[][MAX_CMD_STR] )
 {
 	int32_t	i, j;
 	// Reset all arguments
-  	for( i=0 ; i<MAX_CMD_ARG ; i++ ) 
+  	for( i=0 ; i<MAX_CMD_ARG ; i++ )
   	{
   		arg[i][0] = 0;
   	}

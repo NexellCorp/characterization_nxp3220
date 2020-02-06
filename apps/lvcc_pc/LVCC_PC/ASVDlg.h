@@ -49,7 +49,6 @@ private:
 	DWORD			m_CurComPort;
 	TCHAR			m_CurComPortName[32];
 
-	int				m_Temporature;
 	TCHAR			m_Corner[8];
 	CHIP_INFO		m_ChipInfo;
 
@@ -58,14 +57,8 @@ private:
 	unsigned int 	m_cpuHPM;
 	unsigned int 	m_rcpuHPM;
 
-	unsigned int	m_BoardNumber, m_ChipNumber;
-	unsigned int	m_FreqStart, m_FreqEnd, m_FreqStep;
-	double			m_SysVoltStart, m_SysVoltEnd, m_SysVoltStep;
-	double			m_DeviceVoltStart, m_DeviceVoltEnd, m_DeviceVoltStep;
-	int				m_TestTimeout, m_ResetTimeout;
+	ASV_TEST_CONFIG	m_TestConfig;
 
-	double			m_ArmBootUpVolt;
-	double			m_ArmFaultStartVolt, m_ArmFaultEndVolt;
 	double			m_VoltFixedCore;
 	bool			m_ChipInfoMode;
 
@@ -75,7 +68,6 @@ private:
 
 	//	Output File
 	bool			m_bOpenOutputFile;
-
 	int				m_OutputNumber;
 	char			m_OutputFileName[MAX_PATH];			//	Output File Name
 	char			m_ResultLogFileName[MAX_PATH];		//	Result Log File Name
@@ -113,21 +105,34 @@ public:
 	CEdit m_EdtVoltStart;
 	CEdit m_EdtVoltEnd;
 
-	//	Device Config
-	CButton m_ChkDevice;
-	CComboBox m_CmbDeviceFreq;
+	//	MM Block Controls
+	CButton m_ChkMM;
+	CComboBox m_CmbMMAxi;	// MM block AXI Bus Clock
+	CEdit m_EdtMMFreqStart;
+	CEdit m_EdtMMFreqEnd;
+	CEdit m_EdtMMFreqStep;
+	CEdit m_EdtMMVoltStart;
+	CEdit m_EdtMMVoltEnd;
 
-	//	Core Config
-	CButton m_ChkVpu;
-	CButton m_Chk3D;
-	CEdit m_EdtVoltDeviceStart;
-	CEdit m_EdtVoltDeviceEnd;
+	//	USB Block Controls
+	CButton m_ChkUsb;
+	CEdit m_EdtUsbFreqStart;
+	CEdit m_EdtUsbFreqEnd;
+	CEdit m_EdtUsbFreqStep;
+	CEdit m_EdtUsbVoltStart;
+	CEdit m_EdtUsbVoltEnd;
+
+	//	System BUS Block Control
+	CButton m_ChkSysBus;
+	CEdit m_EdtSysBusFreqStart;
+	CEdit m_EdtSysBusFreqEnd;
+	CEdit m_EdtSysBusFreqStep;
+	CEdit m_EdtSysBusVoltStart;
+	CEdit m_EdtSysBusVoltEnd;
 
 	CButton m_BtnStart;
 	CButton m_BtnStop;
 	CButton m_BtnHWReset;
-
-	CComboBox m_CmbCpuSingleFreq;
 
 	//	Debug Log Related
 	CEdit m_EdtDebug;		//	Debug Window
@@ -146,10 +151,6 @@ public:
 
 	CEdit m_EdtFixedCoreVolt;
 
-	//	Aging Tool
-	CEdit m_EdtNumAging;
-	CButton m_ChkEnAging;
-
 	//	Timeouts
 	CEdit m_EdtResetTimeout;
 	CEdit m_EdtTestTimeout;
@@ -163,6 +164,8 @@ public:
 	afx_msg void OnBnClickedBtnOutPath();
 	afx_msg void OnBnClickedChkChipInfoMode();
 	afx_msg void OnBnClickedChkCpu();
-	afx_msg void OnBnClickedChkDevice();
 	afx_msg void OnBnClickedBtnSaveConfig();
+	afx_msg void OnBnClickedChkMm();
+	afx_msg void OnBnClickedChkUsb();
+	afx_msg void OnBnClickedChkSysbus();
 };
