@@ -27,8 +27,8 @@ static const char *gStrAsvCmdStr[] = {
 static const char *gStrAsvModuleIdStr[] = {
 	"ASVM_CPU",
 	"ASVM_MM",
-	"ASVM_USB"
-	"ASVM_HSIF"
+	"ASVM_USB",
+	"ASVM_HSIF",
 	"ASVM_SYS",
 	"ASVM_MAX",
 };
