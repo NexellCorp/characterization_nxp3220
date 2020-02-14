@@ -271,6 +271,7 @@ bool CASVTest::TestLowestVolt( ASV_MODULE_ID module, unsigned int freq, unsigned
 			if( !SetFrequency(module, freq) )
 			{
 				HardwareReset();
+				return true;
 			}
 			else
 			{
@@ -524,10 +525,12 @@ void CASVTest::FindLVCCThread()
 	int freqIndex = 0;
 	double lvcc = -1;
 	int tmu[2];
-	unsigned int hpm;
+	unsigned int hpm, coreHpm;
 	ASV_EVT_DATA evtData;
 	DWORD startTick, endTick;
 	unsigned int frequency;
+
+	memset(&evtData, 0, sizeof(evtData) );
 
 #if ENABLE_CMD_TEST
 	TestCommand();
@@ -593,12 +596,14 @@ void CASVTest::FindLVCCThread()
 			HardwareReset();
 			lvcc = FastTestLoop(ASVM_MM, &m_TestConfig.mm, frequency, tmu);
 			GetCpuHPM(&hpm);
+			GetCoreHPM(&coreHpm);
 			endTick = GetTickCount();
 			if (m_cbEventFunc)
 			{
 				evtData.module = ASVM_MM;
 				evtData.frequency = frequency;
 				evtData.hpm = hpm;
+				evtData.coreHpm = coreHpm;
 				evtData.lvcc = lvcc;
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
@@ -621,12 +626,14 @@ void CASVTest::FindLVCCThread()
 			HardwareReset();
 			lvcc = FastTestLoop(ASVM_SYS, &m_TestConfig.bus, frequency, tmu);
 			GetCpuHPM(&hpm);
+			GetCoreHPM(&coreHpm);
 			endTick = GetTickCount();
 			if (m_cbEventFunc)
 			{
 				evtData.module = ASVM_SYS;
 				evtData.frequency = frequency;
 				evtData.hpm = hpm;
+				evtData.coreHpm = coreHpm;
 				evtData.lvcc = lvcc;
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
@@ -1322,6 +1329,70 @@ bool CASVTest::GetHPMRUNCPUResponse(unsigned int *hpm)
 	}while(1);
 	return true;
 }
+
+
+bool CASVTest::GetCoreHPM(unsigned int* hpm)
+{
+	char cmdBuf[MAX_CMD_STR];
+	memset(cmdBuf, 0, sizeof(cmdBuf));
+	ASV_PARAM param = { 0 };
+
+	MakeCommandString(cmdBuf, sizeof(cmdBuf), ASVC_GET_CORE_HPM, ASVM_SYS, param);
+	if (m_pCom)
+	{
+		m_pCom->WriteData(cmdBuf, strlen(cmdBuf));
+	}
+
+	return GetHPMRunSysResponse(hpm);
+}
+
+bool CASVTest::GetHPMRunSysResponse(unsigned int* hpm)
+{
+	DWORD waitResult;
+	int pos;
+	do {
+		waitResult = WaitForSingleObject(m_hRxSem, m_TestConfig.testTimeout * 1000);
+		if (WAIT_OBJECT_0 == waitResult)
+		{
+			CNXAutoLock lock(&m_CritRxMsg);
+			if (FindLineFeed(m_RxMessage, m_RxMsgLen, &pos))
+			{
+				if (!strncmp(m_RxMessage, "SUCCESS", 7))
+				{
+
+					sscanf(m_RxMessage, "SUCCESS : CORE HPM=%03x\n", hpm);
+					m_RxMsgLen -= pos;
+					memmove(m_RxMessage, m_RxMessage + pos, m_RxMsgLen);
+					return true;
+				}
+				else if (!strncmp(m_RxMessage, "FAIL", 4))
+				{
+					m_RxMsgLen -= pos;
+					memmove(m_RxMessage, m_RxMessage + pos, m_RxMsgLen);
+					return false;
+				}
+				m_RxMsgLen -= pos;
+				memmove(m_RxMessage, m_RxMessage + pos, m_RxMsgLen);
+				continue;
+			}
+		}
+		else if (WAIT_TIMEOUT == waitResult)
+		{
+			if (m_cbMessageFunc)
+			{
+				char s[128];
+				sprintf(s, "GetCoreHPMResponse : Response Timeout");
+				m_cbMessageFunc(m_pcbArg, s, strlen(s));
+				m_RxMessage[m_RxMsgLen] = '\n';
+				m_RxMessage[m_RxMsgLen + 1] = '\0';
+				m_cbMessageFunc(m_pcbArg, m_RxMessage, 0);
+			}
+			return false;
+		}
+	} while (1);
+	return true;
+}
+
 
 
 
