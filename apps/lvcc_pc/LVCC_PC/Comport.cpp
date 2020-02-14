@@ -94,7 +94,6 @@ bool CComPort::OpenComPort( DWORD nComPortNum )
 {
 	DCB dcb;
 	COMMTIMEOUTS commTimeOuts;
-	TCHAR ErrMsg[21+256];
 
 	//====================================================
 	m_osRead.Offset=0;

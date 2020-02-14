@@ -530,13 +530,23 @@ void CASVDlg::SetControlParam()
 
 	if (m_TestConfig.enableCpu)
 		m_ChkCpu.SetCheck(BST_CHECKED);
+	else
+		m_ChkCpu.SetCheck(BST_UNCHECKED);
+
 	if (m_TestConfig.enableMM)
 		m_ChkMM.SetCheck(BST_CHECKED);
+	else
+		m_ChkMM.SetCheck(BST_UNCHECKED);
+
 	if (m_TestConfig.enableUSB)
 		m_ChkUsb.SetCheck(BST_CHECKED);
+	else
+		m_ChkUsb.SetCheck(BST_UNCHECKED);
+
 	if (m_TestConfig.enableSysBus)
 		m_ChkSysBus.SetCheck(BST_CHECKED);
-
+	else
+		m_ChkSysBus.SetCheck(BST_UNCHECKED);
 
 	OnBnClickedChkCpu();
 	OnBnClickedChkMm();
@@ -856,6 +866,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\tHPM_7"
 				"\tCPU_HPM"
 				"\tRUN_HPM"
+				"\tCORE_HPM"
 				"\tBoard No."
 				"\tTemp."
 				"\tDomain"
@@ -906,6 +917,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\t%d"		//	HPM_7
 				"\t%d"		//	BOOT CPUHPMe
 				"\t%d"		//	RUN HPM
+				"\t%d"		//	CORE HPM
 				"\t%x"		//	Board Number
 				"\t%d"		//	Temporature
 				"\t%s"		//	Domain
@@ -933,6 +945,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				m_HPM[7],
 				m_cpuHPM,
 				pEvtData->hpm,
+				pEvtData->coreHpm,
 				m_TestConfig.boardNumber,
 				m_TestConfig.temporature,
 				ASVModuleIDToStringSimple( pEvtData->module ),
@@ -1036,7 +1049,7 @@ void CASVDlg::SetDefaultConfiguration()
 
 	//	CPU Test
 	m_ChkCpu.SetCheck(BST_CHECKED);
-	m_TestConfig.enableCpu		= 1;
+	m_TestConfig.enableCpu		= 0;
 	m_TestConfig.arm.freqStart	= 100000000;
 	m_TestConfig.arm.freqEnd	= 1000000000;
 	m_TestConfig.arm.freqStep	= 100000000;
@@ -1045,11 +1058,11 @@ void CASVDlg::SetDefaultConfiguration()
 	m_TestConfig.arm.voltTypical= 1.000;		//	Typical Voltage
 
 	m_ChkMM.SetCheck(BST_UNCHECKED);
-	m_TestConfig.enableMM		= 0;
-	m_TestConfig.mm.freqStart	= 100000000;
-	m_TestConfig.mm.freqEnd		= 500000000;
+	m_TestConfig.enableMM		= 1;
+	m_TestConfig.mm.freqStart	= 250000000;
+	m_TestConfig.mm.freqEnd		= 400000000;
 	m_TestConfig.mm.freqStep	= 50000000;
-	m_TestConfig.mm.voltStart	= 0.8000;
+	m_TestConfig.mm.voltStart	= 0.7000;
 	m_TestConfig.mm.voltEnd		= 1.450;
 	m_TestConfig.mm.voltTypical = 1.000;		//	Typical Voltage
 
@@ -1058,22 +1071,22 @@ void CASVDlg::SetDefaultConfiguration()
 	m_TestConfig.usb.freqStart	= 100000000;
 	m_TestConfig.usb.freqEnd	= 500000000;
 	m_TestConfig.usb.freqStep	= 50000000;
-	m_TestConfig.usb.voltStart	= 0.8000;
+	m_TestConfig.usb.voltStart	= 0.7000;
 	m_TestConfig.usb.voltEnd	= 1.450;
 	m_TestConfig.usb.voltTypical= 1.000;		//	Typical Voltage
 
 	m_ChkSysBus.SetCheck(BST_UNCHECKED);
-	m_TestConfig.enableSysBus	= 0;
+	m_TestConfig.enableSysBus	= 1;
 	m_TestConfig.bus.freqStart	= 100000000;
-	m_TestConfig.bus.freqEnd	= 500000000;
+	m_TestConfig.bus.freqEnd	= 400000000;
 	m_TestConfig.bus.freqStep	= 50000000;
-	m_TestConfig.bus.voltStart	= 0.8000;
+	m_TestConfig.bus.voltStart	= 0.7000;
 	m_TestConfig.bus.voltEnd	= 1.450;
 	m_TestConfig.bus.voltTypical= 1.000;		//	Typical Voltage
 
 	//	ResetTimeout
-	m_TestConfig.resetTimeout = 15;
-	m_TestConfig.testTimeout  = 15;
+	m_TestConfig.resetTimeout = 20;
+	m_TestConfig.testTimeout  = 20;
 }
 
 

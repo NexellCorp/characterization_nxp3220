@@ -69,7 +69,8 @@ typedef struct {
 typedef struct {
 	ASV_MODULE_ID	module;
 	unsigned int	frequency;
-	unsigned int	hpm;
+	unsigned int	hpm;			//	cpu HPM
+	unsigned int	coreHpm;		//	Core HPM
 	double			lvcc;			//	volt
 	int				time;			//	processing time in milli second
 	int				tmuStart;
@@ -155,8 +156,10 @@ private:
 	bool	GetHPM(unsigned int RO[8]);
 	bool	GetHPMResponse(unsigned int RO[8]);
 
-	bool	GetCpuHPM(unsigned int *hpm);
+	bool	GetCpuHPM(unsigned int* hpm);
 	bool	GetHPMRUNCPUResponse(unsigned int *hpm);
+	bool	GetCoreHPM(unsigned int* hpm);
+	bool	GetHPMRunSysResponse(unsigned int* hpm);
 
 	static void RxComRxCallbackStub( void *pArg, char *buf, int len )
 	{

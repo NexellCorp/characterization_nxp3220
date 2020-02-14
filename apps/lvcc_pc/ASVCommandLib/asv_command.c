@@ -130,7 +130,7 @@ ASV_RESULT MakeCommandString( char *outBuf, int32_t outSize, ASV_COMMAND cmd, AS
 double NXatof(char *str)
 {
 	int len = 0, n=0, i=0;
-	float f=1.0, val=0.0;
+	double f=1.0, val=0.0;
 
 	while(str[len])len++;
 
