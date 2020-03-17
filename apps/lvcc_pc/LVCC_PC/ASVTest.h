@@ -75,6 +75,7 @@ typedef struct {
 	int				time;			//	processing time in milli second
 	int				tmuStart;
 	int				tmuEnd;
+	int				reserved[4];	//	for Reserved Data
 } ASV_EVT_DATA;
 
 

@@ -530,8 +530,6 @@ void CASVTest::FindLVCCThread()
 	DWORD startTick, endTick;
 	unsigned int frequency;
 
-	memset(&evtData, 0, sizeof(evtData) );
-
 #if ENABLE_CMD_TEST
 	TestCommand();
 #endif
@@ -571,6 +569,7 @@ void CASVTest::FindLVCCThread()
 			endTick = GetTickCount();
 			if( m_cbEventFunc )
 			{
+				memset(&evtData, 0, sizeof(evtData));
 				evtData.module = ASVM_CPU;
 				evtData.frequency = frequency;
 				evtData.hpm =  hpm;
@@ -600,6 +599,7 @@ void CASVTest::FindLVCCThread()
 			endTick = GetTickCount();
 			if (m_cbEventFunc)
 			{
+				memset(&evtData, 0, sizeof(evtData));
 				evtData.module = ASVM_MM;
 				evtData.frequency = frequency;
 				evtData.hpm = hpm;
@@ -608,6 +608,8 @@ void CASVTest::FindLVCCThread()
 				evtData.time = endTick - startTick;
 				evtData.tmuStart = tmu[0];
 				evtData.tmuEnd = tmu[1];
+				//	write freqOther ( AXI Clock ) Information using reserved area.
+				evtData.reserved[0] = m_TestConfig.mm.freqOther;
 				m_cbEventFunc(m_pcbArg, ASVT_EVT_REPORT_RESULT, &evtData);
 			}
 			frequency -= m_TestConfig.mm.freqStep;
@@ -630,6 +632,7 @@ void CASVTest::FindLVCCThread()
 			endTick = GetTickCount();
 			if (m_cbEventFunc)
 			{
+				memset(&evtData, 0, sizeof(evtData));
 				evtData.module = ASVM_SYS;
 				evtData.frequency = frequency;
 				evtData.hpm = hpm;
