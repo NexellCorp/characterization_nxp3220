@@ -870,6 +870,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\tBoard No."
 				"\tTemp."
 				"\tDomain"
+				"\tMM_AXI"
 				"\tSpeed"
 				"\tTMU Start"
 				"\tTMU End"
@@ -921,6 +922,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				"\t%x"		//	Board Number
 				"\t%d"		//	Temporature
 				"\t%s"		//	Domain
+				"\t%d"		//	MM AXI Clock
 				"\t%d"		//	Speed
 				"\t%d"		//	TMU Start
 				"\t%d"		//	TMU End
@@ -949,6 +951,7 @@ void CASVDlg::WriteLVCCData( ASVT_EVT_TYPE evtType, void *evtData )
 				m_TestConfig.boardNumber,
 				m_TestConfig.temporature,
 				ASVModuleIDToStringSimple( pEvtData->module ),
+				pEvtData->reserved[0] / 1000000,	//	MM AXI Clock
 				pEvtData->frequency / 1000000,
 				pEvtData->tmuStart,
 				pEvtData->tmuEnd,
